@@ -1,5 +1,7 @@
 # Data files
 *.csv
+*.zip
+*.gzip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
