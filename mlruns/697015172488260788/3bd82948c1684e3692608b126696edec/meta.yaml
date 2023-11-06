@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/felipelima/alternance/projets/credit-scoring/mlruns/697015172488260788/3bd82948c1684e3692608b126696edec/artifacts
+end_time: 1699267645893
+entry_point_name: ''
+experiment_id: '697015172488260788'
+lifecycle_stage: active
+run_id: 3bd82948c1684e3692608b126696edec
+run_name: LightGBM_fine_tuned_2
+run_uuid: 3bd82948c1684e3692608b126696edec
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699267644386
+status: 3
+tags: []
+user_id: felipelima

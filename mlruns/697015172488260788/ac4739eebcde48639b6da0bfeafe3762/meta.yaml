@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/felipelima/alternance/projets/credit-scoring/mlruns/697015172488260788/ac4739eebcde48639b6da0bfeafe3762/artifacts
+end_time: 1699265422636
+entry_point_name: ''
+experiment_id: '697015172488260788'
+lifecycle_stage: active
+run_id: ac4739eebcde48639b6da0bfeafe3762
+run_name: LogisticRegression
+run_uuid: ac4739eebcde48639b6da0bfeafe3762
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699265421574
+status: 3
+tags: []
+user_id: felipelima

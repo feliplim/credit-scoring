@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/felipelima/alternance/projets/credit-scoring/mlruns/697015172488260788/2d0f8480c0124127b83cb02aeb1be01c/artifacts
+end_time: 1699265413349
+entry_point_name: ''
+experiment_id: '697015172488260788'
+lifecycle_stage: active
+run_id: 2d0f8480c0124127b83cb02aeb1be01c
+run_name: DummyClassifier
+run_uuid: 2d0f8480c0124127b83cb02aeb1be01c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699265412342
+status: 3
+tags: []
+user_id: felipelima

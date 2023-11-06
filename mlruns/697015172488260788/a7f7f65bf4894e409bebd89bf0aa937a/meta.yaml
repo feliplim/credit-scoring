@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/felipelima/alternance/projets/credit-scoring/mlruns/697015172488260788/a7f7f65bf4894e409bebd89bf0aa937a/artifacts
+end_time: 1699266218799
+entry_point_name: ''
+experiment_id: '697015172488260788'
+lifecycle_stage: active
+run_id: a7f7f65bf4894e409bebd89bf0aa937a
+run_name: RandomForest_fine_tuned
+run_uuid: a7f7f65bf4894e409bebd89bf0aa937a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699266217465
+status: 3
+tags: []
+user_id: felipelima
