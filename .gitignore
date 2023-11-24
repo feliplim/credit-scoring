@@ -4,7 +4,7 @@
 *.gzip
 /draft
 /catboost_info
-/data/external
+data/external
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
