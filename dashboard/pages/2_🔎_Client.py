@@ -2,10 +2,14 @@ import streamlit as st
 import requests
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+
+API_ADRESS = 'http://127.0.0.1:8000'
 
 # API
 def get_clients():
-    response = requests.get('http://127.0.0.1:8000/api/clients')
+    response = requests.get(API_ADRESS + '/api/clients')
     if response.status_code == 200: 
         data = response.json()
         clients = data['clientsID']
@@ -15,7 +19,7 @@ def get_clients():
         return None
     
 def get_client_personal_information(id):
-    response = requests.get(f'http://127.0.0.1:8000/api/clients/{id}/personal_information')
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/personal_information')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -24,7 +28,7 @@ def get_client_personal_information(id):
         return None
     
 def get_client_bank_information(id):
-    response = requests.get(f'http://127.0.0.1:8000/api/clients/{id}/bank_information')
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/bank_information')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -33,7 +37,7 @@ def get_client_bank_information(id):
         return None
     
 def get_client_prediction(id):
-    response = requests.get(f'http://127.0.0.1:8000/api/clients/{id}/prediction')
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -42,7 +46,7 @@ def get_client_prediction(id):
         return None
     
 def get_client_shap_values(id):
-    response = requests.get(f'http://127.0.0.1:8000/api/clients/{id}/prediction/shap/local')
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/shap/local')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -51,7 +55,16 @@ def get_client_shap_values(id):
         return None
     
 def get_model_shap_values(id):
-    response = requests.get(f'http://127.0.0.1:8000/api/clients/{id}/prediction/shap/global')
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/shap/global')
+    if response.status_code == 200: 
+        data = response.json()
+        return data
+    else:
+        st.error('Failed to get clients')
+        return None
+    
+def get_neighbors(id):
+    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/neighbors')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -59,6 +72,8 @@ def get_model_shap_values(id):
         st.error('Failed to get clients')
         return None
 
+
+# Plot functions
 def plot_score(value): 
     colors = ['green', 'green', 'yellow', 'yellow', 'yellow', 'yellow', 'red', 'red', 'red', 'red']
     values = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 0]
@@ -109,7 +124,7 @@ def plot_likelihood(repay, default, threshold):
 
     plt.xticks(ha='center')
 
-    st.pyplot(fig)
+    st.pyplot(fig, use_container_width=True)
 
 def plot_extsources(ext1, ext2, ext3):
     colors = ['orange', 'purple', 'blue']
@@ -131,25 +146,88 @@ def plot_extsources(ext1, ext2, ext3):
 
     plt.xticks(ha='center')
 
-    st.pyplot(fig)
+    st.pyplot(fig, use_container_width=True)
+
+def plot_shap(data):
+    feature_names = list(data.keys())
+    shap_values = list(data.values())
+
+    sorted_idx = np.argsort(np.abs(shap_values))
+
+    sorted_shap_values = [shap_values[i] for i in sorted_idx]
+    sorted_feature_names = [feature_names[i] for i in sorted_idx]
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    colors = ['green' if val >= 0 else 'red' for val in sorted_shap_values]
+    ax.barh(sorted_feature_names, sorted_shap_values, color=colors)
+    ax.set_xlim(-1, 1)
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+def plot_elements(central: int, neighbors: list, similarity_scores: list):
+
+    sorted_elements = [x for _, x in sorted(zip(similarity_scores, neighbors))]
+    sorted_scores = sorted(similarity_scores)
+
+    angles = [i * 2 * np.pi / (len(neighbors) + 1) for i in range(1, len(neighbors) + 1)]
+    x_values = [(1 - s + 1) * np.cos(angle) for s, angle in zip(sorted_scores, angles)]
+    y_values = [(1 - s + 1) * np.sin(angle) for s, angle in zip(sorted_scores, angles)]
+    text_sizes = [int(s * 18) if s > 0.5 else 9 for s in sorted_scores]
+    circle_sizes = [s * 50 if s > 0.5 else 25 for s in sorted_scores]
+
+    fig = go.Figure()
+
+    # Add circles for surrounding elements
+    for x, y, circle_size, text, score, text_size in zip(x_values, y_values, circle_sizes, sorted_elements, sorted_scores, text_sizes):
+        fig.add_trace(go.Scatter(x=[x], y=[y], mode="markers+text", 
+                                 text=str(text), textposition='middle center', textfont=dict(size=text_size, color='black'),
+                                 marker=dict(size=circle_size, color='lightblue'),
+                                 hoverinfo="text",
+                                 hovertext=[f'{round(100*score, 2)}%'],
+                                 showlegend=False))
+
+    # Add the central element
+    fig.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", text=str(central),
+                             textposition='middle center', textfont=dict(size=20, color='black'),
+                             marker=dict(size=60, color='orange'),
+                             hoverinfo='none',
+                             showlegend=False))
+
+    fig.update_layout(
+        xaxis=dict(range=[-2.5, 2.5], zeroline=False, showgrid=False, visible=False),
+        yaxis=dict(range=[-2.5, 2.5], zeroline=False, showgrid=False, visible=False),
+        hovermode='closest',
+        height=500,
+        width=500
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 st.set_page_config(
     page_title='Prêt à dépenser - Default Risk - Client',
     page_icon='💳'
 )
 
-st.title('Client information')
+st.markdown("<h2 style='text-align: center;'>Client information</h2>", unsafe_allow_html=True)
+st.markdown('')
 
 clients = get_clients()
 if clients: 
     selected_info = st.selectbox('Select client', clients)
-
+    st.markdown('')
 
 tab1, tab2,tab3, tab4, tab5 = st.tabs(['🆔 Personal information', 
                                        '🏦 Bank information', 
                                        '🎯 Prediction', 
                                        '📊 Local analysis', 
-                                       '🌍 Global analysis'])
+                                       '🌍 Similar clients'])
 
 with tab1:
     if selected_info:
@@ -277,9 +355,13 @@ with tab3:
 with tab4:
     if selected_info:
         info = get_client_shap_values(selected_info)
-        st.write(info)
+        plot_shap(info)
 
 with tab5:
     if selected_info:
-        info = get_model_shap_values(selected_info)
-        st.write(info)
+        info = get_neighbors(selected_info)
+
+        col1, col2 = st.columns(2)
+        with col1: 
+            st.markdown('**Similarity between clients:**')
+            plot_elements(selected_info, list(info.keys()), list(info.values()))
