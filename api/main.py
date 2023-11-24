@@ -9,6 +9,8 @@ from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import shap
 from datetime import date, timedelta
+from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Set FastAPI app
 app = FastAPI(title='Home Credit Default Risk', 
@@ -16,8 +18,8 @@ app = FastAPI(title='Home Credit Default Risk',
               version='0.1.0')
 
 # Set global variables
-N_CUSTOMERS = 100
-N_NEIGHBORS = 50
+N_CUSTOMERS = 10000
+N_NEIGHBORS = 20
 CUSTOM_THRESHOLD = 0.27
 
 # Set local directory
@@ -34,6 +36,10 @@ lgbm = joblib.load('models\\lightgbm_classifier.pkl')
 # Load shap model
 lgbm_shap = joblib.load('models\\lightgbm_shap_explainer.pkl')
 shap_values = lgbm_shap.shap_values(clients_to_predict.drop(columns=['SK_ID_CURR']))
+
+# Classification model
+kmeans = KMeans(random_state=42, n_clusters=100)
+kmeans.fit(clients_to_predict.drop(columns=['SK_ID_CURR']).fillna(0))
 
 @app.get('/')
 async def read_root():
@@ -171,8 +177,8 @@ async def get_local_shap(id: int):
 
 
     client_shap = {
-        'clientId': id, 
-        'shapPosition': idx, 
+        #'clientId': id, 
+        #'shapPosition': idx, 
     }
 
     for name, value in zip(top_feature_names, top_feature_shap_values):
@@ -195,37 +201,44 @@ async def get_global_shap(id: int):
         top_global_features = shap_values_summary.abs().mean().nlargest(10)
 
     client_shap = {
-        'clientId': id, 
-        'shapPosition': idx, 
+        #'clientId': id, 
+        #'shapPosition': idx, 
     }
 
     client_shap.update(top_global_features.to_dict())
 
     return client_shap
 
-@app.get('/api/statistics/genders')
-async def get_stats_gender():
-    
-    count_men = current_clients[current_clients['CODE_GENDER'] == 0]['SK_ID_CURR'].count()
-    count_women = current_clients[current_clients['CODE_GENDER'] == 1]['SK_ID_CURR'].count()
+@app.get('/api/clients/{id}/prediction/neighbors')
+async def get_neighbors(id: int):
 
-    gender = {
-        'countMen': int(count_men), 
-        'countWomen': int(count_women)
-    }
+    clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
 
-    return gender
+    if id not in clients_id:
+        raise HTTPException(status_code=404, detail='Client id not found')
+    else:
+        client_idx = clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].drop(columns=['SK_ID_CURR'])
 
-@app.get('/api/statistics/ages')
-async def get_stats_ages():
+        client_idx_cluster = kmeans.predict(client_idx.fillna(0))
 
-    df_ages = current_clients[['SK_ID_CURR', 'DAYS_BIRTH']]
-    df_ages['age'] = round(df_ages['DAYS_BIRTH']/-365)
-    df_ages.drop(columns=['DAYS_BIRTH'])
+        cluster_labels = kmeans.labels_
+        same_cluster_indices = [i for i, label in enumerate(cluster_labels) if label == client_idx_cluster]
 
-    ages = df_ages.set_index('SK_ID_CURR')['age'].to_dict()
+        similar_clients = clients_to_predict.iloc[same_cluster_indices].sort_values(by='SK_ID_CURR')
+        similar_clients = similar_clients[similar_clients['SK_ID_CURR'] != id].head(N_NEIGHBORS)
 
-    return ages
+        similar_clients = similar_clients['SK_ID_CURR'].to_list()
+
+        central_features = clients_to_predict.fillna(0)[clients_to_predict['SK_ID_CURR'] == id].iloc[:, 1:].values
+
+        similarities = {}
+        for neighbor in similar_clients:
+            neighbor_features = clients_to_predict.fillna(0)[clients_to_predict['SK_ID_CURR'] == neighbor].iloc[:, 1:].values
+            similarity_score = cosine_similarity(central_features, neighbor_features)
+            similarities[neighbor] = similarity_score[0][0]
+
+        result = {k: v for k, v in similarities.items()}
+    return result
 
 @app.get('/api/statistics/loans')
 async def get_stats_loan():
@@ -239,3 +252,97 @@ async def get_stats_loan():
     }
 
     return loans
+
+@app.get('/api/statistics/genders')
+async def get_stats_gender():
+
+    df_gender = current_clients[['SK_ID_CURR', 'CODE_GENDER', 'TARGET']].fillna(0)
+    df_gender['CODE_GENDER'] = df_gender['CODE_GENDER'].replace({0: 'M', 1: 'F'})
+
+    result = {}
+    for index, row in df_gender.iterrows():
+        result[row['SK_ID_CURR']] = [row['CODE_GENDER'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/ages')
+async def get_stats_ages():
+
+    df_ages = current_clients[['SK_ID_CURR', 'DAYS_BIRTH', 'TARGET']].fillna(0)
+    df_ages['age'] = round(df_ages['DAYS_BIRTH']/-365)
+    df_ages.drop(columns=['DAYS_BIRTH'])
+
+    result = {}
+    for index, row in df_ages.iterrows():
+        result[row['SK_ID_CURR']] = [row['age'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/total_income')
+async def get_statistics_total_income():
+
+    df_income = current_clients[['SK_ID_CURR', 'AMT_INCOME_TOTAL', 'TARGET']].fillna(0)
+
+    result = {}
+    for index, row in df_income.iterrows():
+        result[row['SK_ID_CURR']] = [row['AMT_INCOME_TOTAL'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/credit')
+async def get_statistics_credit():
+
+    df_credit = current_clients[['SK_ID_CURR', 'AMT_CREDIT', 'TARGET']].fillna(0)
+
+    result = {}
+    for index, row in df_credit.iterrows():
+        result[row['SK_ID_CURR']] = [row['AMT_CREDIT'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/annuity')
+async def get_statistics_annuity():
+
+    df_credit = current_clients[['SK_ID_CURR', 'AMT_ANNUITY', 'TARGET']].fillna(0)
+
+    result = {}
+    for index, row in df_credit.iterrows():
+        result[row['SK_ID_CURR']] = [row['AMT_ANNUITY'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/length_loan')
+async def get_statistics_length_loan():
+
+    df_credit = current_clients[['SK_ID_CURR', 'AMT_CREDIT', 'AMT_ANNUITY', 'TARGET']].fillna(0)
+    df_credit['length'] = round(12*(df_credit['AMT_CREDIT'] / df_credit['AMT_ANNUITY']))
+
+    result = {}
+    for index, row in df_credit.iterrows():
+        result[row['SK_ID_CURR']] = [row['length'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/payment_rate')
+async def get_statistics_payment_rate():
+
+    df_credit = current_clients[['SK_ID_CURR', 'PAYMENT_RATE', 'TARGET']].fillna(0)
+
+    result = {}
+    for index, row in df_credit.iterrows():
+        result[row['SK_ID_CURR']] = [round(100*row['PAYMENT_RATE'], 2), 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+@app.get('/api/statistics/credit_income_percent')
+async def get_statistics_credit_income_percent():
+
+    df_credit = current_clients[['SK_ID_CURR', 'CREDIT_INCOME_PERCENT', 'TARGET']].fillna(0)
+
+    result = {}
+    for index, row in df_credit.iterrows():
+        result[row['SK_ID_CURR']] = [round(row['CREDIT_INCOME_PERCENT'], 2), 'repaid' if row['TARGET'] == 0 else 'defaulted']
+
+    return result
+
+
