@@ -4,7 +4,7 @@
 *.gzip
 /draft
 /catboost_info
-data/external
+/mlruns
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
