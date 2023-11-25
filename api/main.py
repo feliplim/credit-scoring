@@ -23,18 +23,18 @@ N_NEIGHBORS = 20
 CUSTOM_THRESHOLD = 0.27
 
 # Set local directory
-project_path = 'C:\\Users\\lipe_\\Documents\\projets\\credit-scoring\\'
+project_path = '/Users/felipelima/Documents/projets/credit-scoring/'
 os.chdir(project_path)
 
 # Get dataframes
-current_clients = pd.read_csv('data\\processed\\train_feature_engineering_encoded.csv', nrows=N_CUSTOMERS)
-clients_to_predict = pd.read_csv('data\\processed\\test_feature_engineering_encoded.csv', nrows=N_CUSTOMERS)
+current_clients = pd.read_csv('data/processed/train_feature_engineering_encoded.csv').head(N_CUSTOMERS)
+clients_to_predict = pd.read_csv('data/processed/test_feature_engineering_encoded.csv').head(N_CUSTOMERS)
 
 # Load model
-lgbm = joblib.load('models\\lightgbm_classifier.pkl')
+lgbm = joblib.load('models/lightgbm_classifier.pkl')
 
 # Load shap model
-lgbm_shap = joblib.load('models\\lightgbm_shap_explainer.pkl')
+lgbm_shap = joblib.load('models/lightgbm_shap_explainer.pkl')
 shap_values = lgbm_shap.shap_values(clients_to_predict.drop(columns=['SK_ID_CURR']))
 
 # Classification model
