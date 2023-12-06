@@ -11,6 +11,36 @@ import shap
 from datetime import date, timedelta
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
+
+def impute(data):
+    idx = data[['SK_ID_CURR']]
+    features = data.drop(columns=['SK_ID_CURR'])
+    features_names = data.drop(columns=['SK_ID_CURR']).columns.to_list()
+
+    imp_median = SimpleImputer(missing_values=np.nan, strategy='median')
+
+    imp_median.fit(features)
+
+    features_fill = imp_median.transform(features)
+    features_fill = pd.DataFrame(features_fill, columns=features_names)
+
+    df = pd.concat([idx, features_fill], axis=1)
+
+    return df
+
+def scale(data):
+    idx = data[['SK_ID_CURR']]
+    features = data.drop(columns=['SK_ID_CURR'])
+    features_names = data.drop(columns=['SK_ID_CURR']).columns.to_list()
+
+    scaler = StandardScaler()
+    df_scaled = scaler.fit_transform(features)
+    df_scaled = pd.DataFrame(df_scaled, columns=features_names)
+
+    df = pd.concat([idx, df_scaled], axis=1)
+
+    return df
 
 # Set FastAPI app
 app = FastAPI(title='Home Credit Default Risk', 
@@ -18,17 +48,24 @@ app = FastAPI(title='Home Credit Default Risk',
               version='0.1.0')
 
 # Set global variables
-N_CUSTOMERS = 10000
 N_NEIGHBORS = 20
-CUSTOM_THRESHOLD = 0.27
+CUSTOM_THRESHOLD = 0.297
 
 # Set local directory
 project_path = '/Users/felipelima/Documents/projets/credit-scoring/'
 os.chdir(project_path)
 
 # Get dataframes
-current_clients = pd.read_csv('data/processed/train_feature_engineering_encoded.csv').head(N_CUSTOMERS)
-clients_to_predict = pd.read_csv('data/processed/test_feature_engineering_encoded.csv').head(N_CUSTOMERS)
+current_clients = pd.read_csv('data/processed/train_feature_engineering_encoded.csv')
+clients_to_predict = pd.read_csv('data/processed/test_feature_engineering_encoded.csv')
+
+# Prepare dataframes
+current_clients_fill = impute(current_clients)
+clients_to_predict_fill = impute(clients_to_predict)
+
+# Scale 
+current_clients_scaled = scale(current_clients_fill)
+clients_to_predict_scaled = scale(clients_to_predict_fill)
 
 # Load model
 lgbm = joblib.load('models/lightgbm_classifier.pkl')
@@ -38,8 +75,8 @@ lgbm_shap = joblib.load('models/lightgbm_shap_explainer.pkl')
 shap_values = lgbm_shap.shap_values(clients_to_predict.drop(columns=['SK_ID_CURR']))
 
 # Classification model
-kmeans = KMeans(random_state=42, n_clusters=100)
-kmeans.fit(clients_to_predict.drop(columns=['SK_ID_CURR']).fillna(0))
+knn = NearestNeighbors(n_neighbors=N_NEIGHBORS+1, algorithm='auto', n_jobs=-1, metric='cosine')
+knn.fit(clients_to_predict_scaled.drop(columns=['SK_ID_CURR']))
 
 @app.get('/')
 async def read_root():
@@ -115,7 +152,7 @@ async def get_client_bank_information(id: int):
             incomeType = income
 
     client_info = {
-            'clientId' : float(SK_ID_CURR),
+            'clientId' : int(SK_ID_CURR),
             'totalIncome': round(float(AMT_INCOME_TOTAL)), 
             'extSource1': float(EXT_SOURCE_1),
             'extSource2': float(EXT_SOURCE_2),
@@ -217,27 +254,21 @@ async def get_neighbors(id: int):
     if id not in clients_id:
         raise HTTPException(status_code=404, detail='Client id not found')
     else:
-        client_idx = clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].drop(columns=['SK_ID_CURR'])
+        idx = int(list(clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].index.values)[0])
 
-        client_idx_cluster = kmeans.predict(client_idx.fillna(0))
+        client_idx = clients_to_predict_scaled.drop(columns=['SK_ID_CURR']).iloc[idx].values.reshape(1, -1)
 
-        cluster_labels = kmeans.labels_
-        same_cluster_indices = [i for i, label in enumerate(cluster_labels) if label == client_idx_cluster]
+        distances, indices = knn.kneighbors(client_idx)
+        indices = [int(item) for item in indices[0]]
+        indices = indices[1:]
+        distances = [float(item) for item in distances[0]]
+        distances = distances[1:]
+        scores = [1-item for item in distances]
 
-        similar_clients = clients_to_predict.iloc[same_cluster_indices].sort_values(by='SK_ID_CURR')
-        similar_clients = similar_clients[similar_clients['SK_ID_CURR'] != id].head(N_NEIGHBORS)
+        neighbors = clients_to_predict_scaled.iloc[indices]['SK_ID_CURR'].tolist()
 
-        similar_clients = similar_clients['SK_ID_CURR'].to_list()
+        result = dict(zip(neighbors, scores))
 
-        central_features = clients_to_predict.fillna(0)[clients_to_predict['SK_ID_CURR'] == id].iloc[:, 1:].values
-
-        similarities = {}
-        for neighbor in similar_clients:
-            neighbor_features = clients_to_predict.fillna(0)[clients_to_predict['SK_ID_CURR'] == neighbor].iloc[:, 1:].values
-            similarity_score = cosine_similarity(central_features, neighbor_features)
-            similarities[neighbor] = similarity_score[0][0]
-
-        result = {k: v for k, v in similarities.items()}
     return result
 
 @app.get('/api/statistics/loans')
@@ -278,7 +309,7 @@ async def get_stats_ages():
 
     return result
 
-@app.get('/api/statistics/total_income')
+@app.get('/api/statistics/total_incomes')
 async def get_statistics_total_income():
 
     df_income = current_clients[['SK_ID_CURR', 'AMT_INCOME_TOTAL', 'TARGET']].fillna(0)
@@ -289,7 +320,7 @@ async def get_statistics_total_income():
 
     return result
 
-@app.get('/api/statistics/credit')
+@app.get('/api/statistics/credits')
 async def get_statistics_credit():
 
     df_credit = current_clients[['SK_ID_CURR', 'AMT_CREDIT', 'TARGET']].fillna(0)
@@ -315,11 +346,11 @@ async def get_statistics_annuity():
 async def get_statistics_length_loan():
 
     df_credit = current_clients[['SK_ID_CURR', 'AMT_CREDIT', 'AMT_ANNUITY', 'TARGET']].fillna(0)
-    df_credit['length'] = round(12*(df_credit['AMT_CREDIT'] / df_credit['AMT_ANNUITY']))
+    #df_credit['length'] = round(12*(df_credit['AMT_CREDIT'] / df_credit['AMT_ANNUITY']))
 
     result = {}
     for index, row in df_credit.iterrows():
-        result[row['SK_ID_CURR']] = [row['length'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
+        result[row['SK_ID_CURR']] = [row['AMT_CREDIT'], row['AMT_ANNUITY'], 'repaid' if row['TARGET'] == 0 else 'defaulted']
 
     return result
 
