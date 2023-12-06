@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import seaborn as sns 
+import matplotlib.ticker as mtick
 
-API_ADRESS = 'http://127.0.0.1:8000'
+API_ADDRESS = 'http://127.0.0.1:8000'
 
 # API
 def get_clients():
-    response = requests.get(API_ADRESS + '/api/clients')
+    response = requests.get(API_ADDRESS + '/api/clients')
     if response.status_code == 200: 
         data = response.json()
         clients = data['clientsID']
@@ -19,7 +21,7 @@ def get_clients():
         return None
     
 def get_client_personal_information(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/personal_information')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/personal_information')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -28,7 +30,7 @@ def get_client_personal_information(id):
         return None
     
 def get_client_bank_information(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/bank_information')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/bank_information')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -37,7 +39,7 @@ def get_client_bank_information(id):
         return None
     
 def get_client_prediction(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -46,7 +48,7 @@ def get_client_prediction(id):
         return None
     
 def get_client_shap_values(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/shap/local')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/shap/local')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -55,7 +57,7 @@ def get_client_shap_values(id):
         return None
     
 def get_model_shap_values(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/shap/global')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/shap/global')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -64,7 +66,7 @@ def get_model_shap_values(id):
         return None
     
 def get_neighbors(id):
-    response = requests.get(API_ADRESS + f'/api/clients/{id}/prediction/neighbors')
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors')
     if response.status_code == 200: 
         data = response.json()
         return data
@@ -210,6 +212,95 @@ def plot_elements(central: int, neighbors: list, similarity_scores: list):
 
     st.plotly_chart(fig, use_container_width=True)
 
+def plot_neighbors_similarities(central, neighbors, similarities):
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    similarities = [100*item for item in similarities]
+    ax.bar(range(1, len(neighbors)+1), similarities, color='orange', width=0.5)
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_ylim(0, 100)
+    ax.set_xlim([0, len(neighbors)+1])
+
+    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+
+    plt.legend()
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+def plot_neighbors_scores(central, data):
+
+    central = get_client_prediction(central)
+
+    scores = {item['clientId']: item['score'] for item in data}
+
+    neighbors = list(scores.keys())
+    scores = list(scores.values())
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.bar(range(1, len(scores)+1), scores, color='orange', width=0.5)
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_ylim(0, max(scores) * 1.1)  
+    ax.set_xlim([0, len(neighbors)+1])
+
+    plt.axhline(y=central['score'], color='red', linestyle='--', label=central['clientId'])
+    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
+
+    plt.legend()
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+def plot_neighbors_loan_acceptance(central, data):
+
+    central = get_client_prediction(central)
+
+    loan_acceptance = {item['clientId']: item['repay'] for item in data}
+    df = pd.DataFrame.from_dict(loan_acceptance, orient='index', columns=['repay'])
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    df['repay'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax)
+    ax.set_ylabel('')
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+def plot_neighbors_annual_income(central, data):
+
+    central = get_client_bank_information(central)
+
+    annual_income = {item['clientId']: item['totalIncome'] for item in data}
+
+    neighbors = list(annual_income.keys())
+    incomes = list(annual_income.values())
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.bar(range(1, len(incomes)+1), incomes, color='orange', width=0.5)
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_ylim(0, max(incomes) * 1.1)  
+    ax.set_xlim([0, len(neighbors)+1])
+
+    plt.axhline(y=central['totalIncome'], color='red', linestyle='--', label=central['clientId'])
+    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
+
+    plt.legend()
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
 st.set_page_config(
     page_title='Prêt à dépenser - Default Risk - Client',
     page_icon='💳'
@@ -326,7 +417,7 @@ with tab2:
 
         with col2: 
             st.markdown('\n\n')
-            st.markdown('**External sources:**')
+            st.markdown('**Normalized score from other financial institutions:**')
             plot_extsources(info['extSource1'], info['extSource2'], info['extSource3'])
 
 with tab3:
@@ -343,9 +434,9 @@ with tab3:
 
         with col2: 
             st.markdown('**Likelihood:**')
+            st.markdown('')
+            st.markdown('')
             plot_likelihood(info['probability0'], info['probability1'], info['threshold'])
-            st.markdown('')
-            st.markdown('')
             st.markdown('')
             st.markdown('')
             st.markdown('**Should the loan request be accepted:**')
@@ -364,4 +455,24 @@ with tab5:
         col1, col2 = st.columns(2)
         with col1: 
             st.markdown('**Similarity between clients:**')
-            plot_elements(selected_info, list(info.keys()), list(info.values()))
+            plot_neighbors_similarities(selected_info, list(info.keys()), list(info.values()))
+            st.markdown('\n')
+
+            st.markdown('**Distribution of annual income:**')
+            data = []
+            for neighbor in list(info.keys()):
+                data.append(get_client_bank_information(neighbor))
+            plot_neighbors_annual_income(selected_info, data)
+
+
+
+        with col2:
+            st.markdown('**Distribution of score:**')
+            data = []
+            for neighbor in list(info.keys()):
+                data.append(get_client_prediction(neighbor))
+            plot_neighbors_scores(selected_info, data)
+            st.markdown('\n')
+            
+            st.markdown('**Distribution of loan acceptance:**')
+            plot_neighbors_loan_acceptance(selected_info, data)
