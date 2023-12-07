@@ -10,6 +10,7 @@ import matplotlib.ticker as mtick
 API_ADDRESS = 'http://127.0.0.1:8000'
 
 # API
+@st.cache_data  
 def get_clients():
     response = requests.get(API_ADDRESS + '/api/clients')
     if response.status_code == 200: 
@@ -315,7 +316,7 @@ if clients:
     st.markdown('')
 
 tab1, tab2,tab3, tab4, tab5 = st.tabs(['🆔 Personal information', 
-                                       '🏦 Bank information', 
+                                       '🏦 Financial information', 
                                        '🎯 Prediction', 
                                        '📊 Local analysis', 
                                        '🌍 Similar clients'])
