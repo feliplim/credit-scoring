@@ -6,7 +6,7 @@ import os
 @pytest.fixture(scope='module')
 def s3_client():
     '''Create an S3 client'''
-    region_name = os.getenv('AWS_REGION')
+    region_name = os.getenv('AWS_DEFAULT_REGION')
     access_key = os.getenv('AWS_ACCESS_KEY_ID')
     secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     return boto3.client('s3', region_name=region_name, aws_access_key_id=access_key, aws_secret_access_key=secret_key)
