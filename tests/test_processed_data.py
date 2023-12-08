@@ -12,7 +12,7 @@ def s3_client():
     return boto3.client('s3', region_name=region_name, aws_access_key_id=access_key, aws_secret_access_key=secret_key)
 
 @pytest.fixture(scope='module')
-def get_train_data():
+def get_train_data(s3_client):
     '''Get customers processed train data to feed into the tests'''
     bucket_name = 'credit-scoring-openclassrooms'
     file = 'data/processed/train_feature_engineering_encoded.csv'
@@ -20,7 +20,7 @@ def get_train_data():
     return pd.read_csv(obj['Body'])
 
 @pytest.fixture(scope='module')
-def get_test_data():
+def get_test_data(s3_client):
     '''Get customers processed test data to feed into the tests'''
     bucket_name = 'credit-scoring-openclassrooms'
     file = 'data/processed/test_feature_engineering_encoded.csv'
