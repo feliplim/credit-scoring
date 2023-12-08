@@ -7,6 +7,7 @@ import numpy as np
 API_ADDRESS = 'http://127.0.0.1:8000'
 
 # API
+@st.cache_data  
 def get_genders():
     response = requests.get(API_ADDRESS + '/api/statistics/genders')
     if response.status_code == 200: 
@@ -15,7 +16,7 @@ def get_genders():
     else:
         st.error('Failed to get clients')
         return None
-    
+@st.cache_data      
 def get_ages():
     response = requests.get(API_ADDRESS + '/api/statistics/ages')
     if response.status_code == 200: 
@@ -24,7 +25,7 @@ def get_ages():
     else:
         st.error('Failed to get clients')
         return None
-    
+@st.cache_data      
 def get_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/loans')
     if response.status_code == 200: 
@@ -33,7 +34,7 @@ def get_loan():
     else:
         st.error('Failed to get clients')
         return None
-    
+@st.cache_data      
 def get_incomes():
     response = requests.get(API_ADDRESS + '/api/statistics/total_incomes')
     if response.status_code == 200:
@@ -42,7 +43,7 @@ def get_incomes():
     else:
         st.error('Failed to get clients')
         return None
-    
+@st.cache_data      
 def get_credits():
     response = requests.get(API_ADDRESS + '/api/statistics/credits')
     if response.status_code == 200:
@@ -51,7 +52,7 @@ def get_credits():
     else:
         st.error('Failed to get clients')
         return None
-
+@st.cache_data  
 def get_length_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/length_loan')
     if response.status_code == 200:
@@ -60,7 +61,7 @@ def get_length_loan():
     else:
         st.error('Failed to get clients')
         return None
-    
+@st.cache_data      
 def get_payment_rate():
     response = requests.get(API_ADDRESS + '/api/statistics/payment_rate')
     if response.status_code == 200:
@@ -71,6 +72,7 @@ def get_payment_rate():
         return None
 
 # Plotting functions
+@st.cache_data  
 def plot_gender(data: dict):
 
     categories = {
@@ -110,6 +112,7 @@ def plot_gender(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_ages(data: dict):
 
     fig, ax = plt.subplots()
@@ -124,6 +127,7 @@ def plot_ages(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_loan(data: dict):
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -140,6 +144,7 @@ def plot_loan(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_total_incomes(data: dict):
 
     incomes_defaulted = [int(value[0]) for value in data.values() if value[1] == 'defaulted']
@@ -187,6 +192,7 @@ def plot_total_incomes(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_total_length_loan(data: dict):
 
     length_defaulted = []
@@ -240,6 +246,7 @@ def plot_total_length_loan(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_total_payment_rates(data: dict):
 
     rate_defaulted = [value[0] for value in data.values() if value[1] == 'defaulted']

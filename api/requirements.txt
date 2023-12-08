@@ -1,9 +1,0 @@
-fastapi
-pandas
-joblib
-scikit-learn
-numpy
-shap
-pickle-mixin
-uvicorn
-lightgbm
