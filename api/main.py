@@ -1,16 +1,11 @@
-from fastapi import FastAPI, File, HTTPException
+from fastapi import FastAPI, HTTPException
 import pandas as pd
-import os
 import joblib
 from datetime import date, timedelta
-import pickle
 from sklearn.impute import SimpleImputer
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import shap
-from datetime import date, timedelta
-from sklearn.cluster import KMeans
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 from mangum import Mangum
 import gzip

@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
 import gzip
-import os
 import io
 
 @pytest.fixture(scope='module')
