@@ -1,31 +1,30 @@
 import pandas as pd
 import pytest
-import boto3
+import gzip
 import os
+import io
+
+# Set local directory
+project_path = '../'
+os.chdir(project_path)
 
 @pytest.fixture(scope='module')
-def s3_client():
-    '''Create an S3 client'''
-    region_name = os.environ['AWS_DEFAULT_REGION']
-    access_key = os.environ['AWS_ACCESS_KEY_ID']
-    secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-    return boto3.client('s3', region_name=region_name, aws_access_key_id=access_key, aws_secret_access_key=secret_key)
-
-@pytest.fixture(scope='module')
-def get_train_data(s3_client):
+def get_train_data():
     '''Get customers processed train data to feed into the tests'''
-    bucket_name = 'credit-scoring-openclassrooms'
-    file = 'data/processed/train_feature_engineering_encoded.csv'
-    obj = s3_client.get_object(Bucket=bucket_name, Key=file)
-    return pd.read_csv(obj['Body'])
+    file = 'data/processed/train_feature_engineering_encoded.csv.gz'
+    with gzip.open(file, 'rb') as f:
+        content = f.read()
+        train_data = pd.read_csv(io.StringIO(content.decode('utf-8')))
+    return train_data
 
 @pytest.fixture(scope='module')
-def get_test_data(s3_client):
+def get_test_data():
     '''Get customers processed test data to feed into the tests'''
-    bucket_name = 'credit-scoring-openclassrooms'
     file = 'data/processed/test_feature_engineering_encoded.csv'
-    obj = s3_client.get_object(Bucket=bucket_name, Key=file)
-    return pd.read_csv(obj['Body'])
+    with gzip.open(file, 'rb') as f:
+        content = f.read()
+        test_data = pd.read_csv(io.StringIO(content.decode('utf-8')))
+    return test_data
 
 def test_train_duplicates(get_train_data):
     '''Check if the train duplicated dataframe is empty --> no duplicates'''

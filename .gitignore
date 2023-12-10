@@ -1,11 +1,9 @@
 # Data files
 *.csv
 *.zip
-*.gzip
 /draft
 /catboost_info
 /mlruns
-/data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
