@@ -5,7 +5,7 @@ import os
 import io
 
 # Set local directory
-project_path = '../'
+project_path = 'credit-scoring/'
 os.chdir(project_path)
 
 @pytest.fixture(scope='module')
