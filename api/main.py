@@ -12,6 +12,15 @@ from datetime import date, timedelta
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
+from mangum import Mangum
+import gzip
+import io
+
+def read(file_path):
+    with gzip.open(file_path, 'rb') as file:
+        content = file.read()
+    data = pd.read_csv(io.StringIO(content.decode('utf-8')))
+    return data
 
 def impute(data):
     idx = data[['SK_ID_CURR']]
@@ -51,13 +60,9 @@ app = FastAPI(title='Home Credit Default Risk',
 N_NEIGHBORS = 20
 CUSTOM_THRESHOLD = 0.297
 
-# Set local directory
-project_path = '/Users/felipelima/Documents/projets/credit-scoring/'
-os.chdir(project_path)
-
 # Get dataframes
-current_clients = pd.read_csv('data/processed/train_feature_engineering_encoded.csv')
-clients_to_predict = pd.read_csv('data/processed/test_feature_engineering_encoded.csv')
+current_clients = read('data/processed/train_feature_engineering_encoded.csv.gz')
+clients_to_predict = read('data/processed/test_feature_engineering_encoded.csv.gz')
 
 # Prepare dataframes
 current_clients_fill = impute(current_clients)
@@ -377,3 +382,4 @@ async def get_statistics_credit_income_percent():
     return result
 
 
+handler = Mangum(app=app)
