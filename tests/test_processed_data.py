@@ -4,10 +4,6 @@ import gzip
 import os
 import io
 
-# Set local directory
-project_path = 'credit-scoring/'
-os.chdir(project_path)
-
 @pytest.fixture(scope='module')
 def get_train_data():
     '''Get customers processed train data to feed into the tests'''
