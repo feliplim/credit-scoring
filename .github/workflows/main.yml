@@ -45,15 +45,6 @@ jobs:
               run: python -m venv venv && source venv/bin/activate && pip3 install -r requirements.txt
 
             # Run tests
-            - name: Set AWS credentials
-              env:
-                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
-              run: |
-                export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
-                export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
-                export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}"
             - name: Run Tests
               # Note that you have to activate the virtualenv in every step
               # because GitHub actions doesn't preserve the environment
