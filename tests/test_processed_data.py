@@ -20,7 +20,7 @@ def get_train_data():
 @pytest.fixture(scope='module')
 def get_test_data():
     '''Get customers processed test data to feed into the tests'''
-    file = 'data/processed/test_feature_engineering_encoded.csv'
+    file = 'data/processed/test_feature_engineering_encoded.csv.gz'
     with gzip.open(file, 'rb') as f:
         content = f.read()
         test_data = pd.read_csv(io.StringIO(content.decode('utf-8')))
