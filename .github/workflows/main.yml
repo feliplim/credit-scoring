@@ -65,9 +65,14 @@ jobs:
               run: |
                 echo "$AWS_SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS} '
-                    mkdir -p credit-scoring
+                    mkdir -p credit-scoring/api
+                    mkdir -p credit-scoring/data/processed
+                    mkdir -p credit-scoring/models
                 '
-                scp -o StrictHostKeyChecking=no -i private_key -r . ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r api/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r data/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
 
             - name: Create docker image
               env: 
