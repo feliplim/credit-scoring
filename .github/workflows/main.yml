@@ -58,19 +58,12 @@ jobs:
             # Check out repo so our workflow can access it
             - uses: actions/checkout@v2
 
-            - name: Generate SSH key pair
-              run: |
-                ssh-keygen -t rsa -b 4096 -f my_key -N ""
-
-            - name: Set up SSH Key
-              run: echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > credit-scoring.pem && chmod 400 credit-scoring.pem
-
-            - name: Add EC2 instance to known hosts
-              run: ssh-keyscan -H ${{ secrets.AWS_PUBLIC_IP_ADDRESS }} >> ~/.ssh/known_hosts
-
-            - name: Transfer files to EC2
-              run: |
-                ssh -i credit-scoring.pem ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }} "mkdir -p /home/ubuntu/credit-scoring && exit"
-                scp -i credit-scoring.pem -r api data models ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }}:/home/ubuntu/credit-scoring
+            - name: Connect to EC2 Instance
               env: 
                 AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS: ${{ secrets.AWS_PUBLIC_IP_ADDRESS }}
+              run: |
+                echo "$AWS_SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS} '
+                    touch test.txt
+                '
