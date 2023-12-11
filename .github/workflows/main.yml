@@ -65,5 +65,4 @@ jobs:
               username: ubuntu
               port: 22
               key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-              source: 'api/*'
-              target: 'api'
+              source: 'api/*, data/*, models/*'
