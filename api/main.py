@@ -7,14 +7,14 @@ from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import shap
 from sklearn.preprocessing import StandardScaler
-from mangum import Mangum
 import gzip
 import io
 
 def read(file_path):
     with gzip.open(file_path, 'rb') as file:
-        content = file.read()
-    data = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        content = file.read().decode('utf-8')
+    data = pd.read_csv(io.StringIO(content))
+    data = data.replace([np.inf, -np.inf], np.nan)
     return data
 
 def impute(data):
@@ -53,9 +53,11 @@ app = FastAPI(title='Home Credit Default Risk',
 
 # Set global variables
 N_NEIGHBORS = 20
-CUSTOM_THRESHOLD = 0.297
+CUSTOM_THRESHOLD = 0.245
 
 # Get dataframes
+#current_clients = pd.read_csv('data/processed/train_feature_engineering_encoded.csv')
+#clients_to_predict = pd.read_csv('data/processed/test_feature_engineering_encoded.csv')
 current_clients = read('data/processed/train_feature_engineering_encoded.csv.gz')
 clients_to_predict = read('data/processed/test_feature_engineering_encoded.csv.gz')
 
@@ -375,6 +377,3 @@ async def get_statistics_credit_income_percent():
         result[row['SK_ID_CURR']] = [round(row['CREDIT_INCOME_PERCENT'], 2), 'repaid' if row['TARGET'] == 0 else 'defaulted']
 
     return result
-
-
-handler = Mangum(app=app)
