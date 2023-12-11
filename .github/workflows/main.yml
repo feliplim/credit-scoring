@@ -67,7 +67,7 @@ jobs:
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS} '
                     mkdir -p credit-scoring
                 '
-                scp -o StrictHostKeyChecking=no -i private_key -r . ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring
+                scp -o StrictHostKeyChecking=no -i private_key -r . ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
 
             - name: Create docker image
               env: 
