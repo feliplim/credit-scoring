@@ -59,17 +59,10 @@ jobs:
           - uses: actions/checkout@v2
 
           - name: Set up SSH Key
-            run: echo "$AWS_SSH_PRIVATE_KEY" > ssh_key.pem && chmod 400 ssh_key.pem
-
-          - name: Get EC2 SSH fingerprint
-            run: ssh-keyscan -t rsa -p 22 -H ${{ secrets.AWS_PUBLIC_IP_ADDRESS }} >> ec2_fingerprint
-            id: fingerprint
-    
-          - name: Add EC2 SSH fingerprint to known_hosts
-            run: echo "${{ steps.fingerprint.outputs.stdout }}" >> $HOME/.ssh/known_hosts
+            env: 
+              AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+            run: echo "$AWS_SSH_PRIVATE_KEY" > ssh_key.pem && chmod 600 ssh_key.pem
 
           - name: Transfer file to EC2
             run: | 
               scp -i ssh_key.pem -r data/ api/ models/ ubuntu@${{secrets.AWS_PUBLIC_IP_ADDRESS}}:/home/ubuntu/
-            env: 
-              AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
