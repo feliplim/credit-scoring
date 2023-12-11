@@ -58,12 +58,16 @@ jobs:
             # Check out repo so our workflow can access it
             - uses: actions/checkout@v2
 
-            - name: Copy files using SSH
-              uses: appleboy/scp-action@v0.1.4
-              with: 
-                host: ${{ secrets.AWS_PUBLIC_IP_ADDRESS }}
-                username: ubuntu
-                port: 22
-                key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-                source: 'api/*, data/*, models/*'
-                target: 'credit-scoring'
+            - name: Generate SSH key pair
+              run: |
+                ssh-keygen -t rsa -b 4096 -f my_key -N ""
+
+            - name: Set up SSH Key
+              run: echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > credit-scoring.pem && chmod 400 credit-scoring.pem
+
+            - name: Transfer files to EC2
+              run: |
+                ssh -i credit-scoring.pem ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }} "mkdir -p /home/ubuntu/credit-scoring && exit"
+                scp -i credit-scoring.pem -r api data models ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }}:/home/ubuntu/credit-scoring
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
