@@ -64,6 +64,7 @@ jobs:
             run: |
               echo "$AWS_SSH_PRIVATE_KEY" > ssh_key.pem 
               chmod 400 ssh_key.pem
+              mkdir -p ~/.ssh
               echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config  
 
           - name: Transfer file to EC2
