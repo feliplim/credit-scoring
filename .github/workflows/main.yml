@@ -61,8 +61,11 @@ jobs:
           - name: Set up SSH Key
             env: 
               AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-            run: echo "$AWS_SSH_PRIVATE_KEY" > ssh_key.pem && chmod 600 ssh_key.pem
+            run: |
+              echo "$AWS_SSH_PRIVATE_KEY" > ssh_key.pem 
+              chmod 400 ssh_key.pem
+              echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config  
 
           - name: Transfer file to EC2
             run: | 
-              scp -i ssh_key.pem -r data/ api/ models/ ubuntu@${{secrets.AWS_PUBLIC_IP_ADDRESS}}:/home/ubuntu/
+              scp -i ssh_key.pem -r data/ api/ models/ ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }}:/home/ubuntu/ -v
