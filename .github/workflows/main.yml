@@ -65,6 +65,9 @@ jobs:
             - name: Set up SSH Key
               run: echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > credit-scoring.pem && chmod 400 credit-scoring.pem
 
+            - name: Add EC2 instance to known hosts
+              run: ssh-keyscan -H ${{ secrets.AWS_PUBLIC_IP_ADDRESS }} >> ~/.ssh/known_hosts
+
             - name: Transfer files to EC2
               run: |
                 ssh -i credit-scoring.pem ubuntu@${{ secrets.AWS_PUBLIC_IP_ADDRESS }} "mkdir -p /home/ubuntu/credit-scoring && exit"
