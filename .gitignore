@@ -5,6 +5,9 @@
 /catboost_info
 /mlruns
 
+# Security keys
+*.pem
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
