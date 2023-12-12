@@ -94,24 +94,14 @@ jobs:
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/
                 scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/
-            
-            - name: Stop and drop previous docker containers / images
-              env: 
-                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
-              run: |
-                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
-                    sudo docker stop credit-scoring-container
-                    sudo docker rm credit-scoring-containter
-                    sudo docker rmi credit-scoring-app
-                '
+                
             - name: Create docker image
               env: 
                 AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
                 AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
               run: |
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
-                    sudo docker build -t credit-scoring-app .
+                    sudo docker build -t credit-scoring-app:latest .
                 '
                 
             - name: Run docker
@@ -120,7 +110,7 @@ jobs:
                 AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
               run: |
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
-                    sudo docker run -d -p 8000:8000 --name credit-scoring-container credit-scoring-app uvicorn main:app --proxy-headers --host=0.0.0.0 --port=8000
+                    sudo docker run -d -p 8000:8000 credit-scoring-app uvicorn main:app --proxy-headers --host=0.0.0.0 --port=8000
                 '
             # Steps for STATS API
             
