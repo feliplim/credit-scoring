@@ -58,19 +58,70 @@ jobs:
             # Check out repo so our workflow can access it
             - uses: actions/checkout@v2
 
-            - name: Copy files inside the EC2 instance
+            # Set up the ECS Instance
+            - name: Set up EC2 instance
               env: 
                 AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-                AWS_PUBLIC_IP_ADDRESS: ${{ secrets.AWS_PUBLIC_IP_ADDRESS }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
               run: |
                 echo "$AWS_SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
-                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS} '
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
+                  sudo apt-get update
+                  sudo apt install -y nginx docker.io
+                  sudo vi /etc/nginx/sites-enabled/fastapi_nginx
+                  echo "server {
+                          listen 80;
+                          server_name 13.38.227.232;
+                          location / {
+                              proxy_pass http://127.0.0.1:8000;
+                          }
+                        }" | sudo tee -a /etc/nginx/sites-enabled/fastapi_nginx
+                  sudo service nginx restart
+                '
+
+            # Steps for PREDICTION API
+            - name: Copy files inside the EC2 instance 
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
                     mkdir -p credit-scoring/api
                     mkdir -p credit-scoring/data/processed
                     mkdir -p credit-scoring/models
                 '
-                scp -o StrictHostKeyChecking=no -i private_key -r api/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
-                scp -o StrictHostKeyChecking=no -i private_key -r data/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
-                scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
-                scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS}:/home/ubuntu/credit-scoring/
-
+                scp -o StrictHostKeyChecking=no -i private_key -r Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/
+                scp -o StrictHostKeyChecking=no -i private_key -r api/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/data/processed/
+                scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API}:/home/ubuntu/credit-scoring/
+            
+            - name: Stop and drop previous docker containers / images
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
+                    sudo docker stop credit-scoring-container
+                    sudo docker rm credit-scoring-containter
+                    sudo docker rmi credit-scoring-app
+                '
+            - name: Create docker image
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
+                    sudo docker build -t credit-scoring-app .
+                '
+                
+            - name: Run docker
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
+                    sudo docker run -d -p 8000:8000 --name credit-scoring-container credit-scoring-app uvicorn main:app --proxy-headers --host=0.0.0.0 --port=8000
+                '
+            # Steps for STATS API
+            
