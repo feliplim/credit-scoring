@@ -70,7 +70,7 @@ jobs:
                   sudo apt install -y nginx docker.io
                   echo "server {
                     listen 80;
-                    server_name ${AWS_PUBLIC_IP_ADDRESS_PREDICT_API};
+                    server_name ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }};
                     location / {
                         proxy_pass http://127.0.0.1:8000;
                     }
