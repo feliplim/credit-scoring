@@ -53,7 +53,7 @@ app = FastAPI(title='Home Credit Default Risk',
 
 # Set global variables
 N_NEIGHBORS = 20
-CUSTOM_THRESHOLD = 0.245
+CUSTOM_THRESHOLD = 0.274
 
 # Get dataframes
 clients_to_predict = read('../data/processed/test_feature_engineering_encoded.csv.gz')
