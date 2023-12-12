@@ -6,7 +6,7 @@ import io
 @pytest.fixture(scope='module')
 def get_train_data():
     '''Get customers processed train data to feed into the tests'''
-    file = 'data/processed/train_feature_engineering_encoded.csv.gz'
+    file = 'data/processed/train_feature_engineering_encoded_extract.csv.gz'
     with gzip.open(file, 'rb') as f:
         content = f.read()
         train_data = pd.read_csv(io.StringIO(content.decode('utf-8')))

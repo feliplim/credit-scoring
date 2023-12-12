@@ -78,6 +78,26 @@ jobs:
                   sudo service nginx restart
                 '
 
+            # Stop running containers / images
+            - name: Stop running docker containers
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_PREDICT_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_PREDICT_API }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_PREDICT_API} '
+                    if [ "$(sudo docker ps -q)" ]; then
+                        sudo docker stop $(sudo docker ps -q) && sudo docker rm -v $(sudo docker ps -aq)
+                    else
+                        echo "No running containers found."
+                    fi
+
+                    if [ "$(sudo docker images -q)" ]; then
+                        sudo docker rmi $(sudo docker images -q)
+                    else
+                        echo "No Docker images found."
+                    fi
+                '
+
             # Steps for PREDICTION API
             - name: Copy files inside the EC2 instance 
               env: 
