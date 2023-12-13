@@ -52,7 +52,7 @@ app = FastAPI(title='Home Credit Default Risk',
               version='0.1.0')
 
 # Set global variables
-N_NEIGHBORS = 20
+N_NEIGHBORS = 100
 CUSTOM_THRESHOLD = 0.274
 
 # Get dataframes
