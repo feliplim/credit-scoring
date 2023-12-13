@@ -159,7 +159,7 @@ def plot_total_incomes(data: dict):
             defaulted_incomes.append(income)
 
     hist_data = [repaid_incomes, defaulted_incomes]
-    lables = ['repaid', 'defaulted']
+    labels = ['repaid', 'defaulted']
 
     fig = ff.create_distplot(hist_data, labels, bin_size=[0.25, 0.25])
 
