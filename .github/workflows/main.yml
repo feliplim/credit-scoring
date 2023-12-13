@@ -110,7 +110,7 @@ jobs:
                     mkdir -p credit-scoring/models
                 '
                 scp -o StrictHostKeyChecking=no -i private_key -r api/Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/
-                scp -o StrictHostKeyChecking=no -i private_key -r api/main.py ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r api/main.py ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/api/
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/train_feature_engineering_encoded_extract.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
