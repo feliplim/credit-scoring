@@ -4,13 +4,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
-import plotly.figure_factory as ff
-import plotly.express as px
-import pandas as pd
 
 API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
 # API
+@st.cache_data  
 def get_genders():
     response = requests.get(API_ADDRESS + '/api/statistics/genders')
     if response.status_code == 200: 
@@ -19,7 +17,7 @@ def get_genders():
     else:
         st.error('Failed to get clients')
         return None
-
+@st.cache_data      
 def get_ages():
     response = requests.get(API_ADDRESS + '/api/statistics/ages')
     if response.status_code == 200: 
@@ -28,7 +26,7 @@ def get_ages():
     else:
         st.error('Failed to get clients')
         return None
-
+@st.cache_data      
 def get_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/loans')
     if response.status_code == 200: 
@@ -37,7 +35,7 @@ def get_loan():
     else:
         st.error('Failed to get clients')
         return None
-   
+@st.cache_data      
 def get_incomes():
     response = requests.get(API_ADDRESS + '/api/statistics/total_incomes')
     if response.status_code == 200:
@@ -46,7 +44,7 @@ def get_incomes():
     else:
         st.error('Failed to get clients')
         return None
-  
+@st.cache_data      
 def get_credits():
     response = requests.get(API_ADDRESS + '/api/statistics/credits')
     if response.status_code == 200:
@@ -55,7 +53,7 @@ def get_credits():
     else:
         st.error('Failed to get clients')
         return None
-
+@st.cache_data  
 def get_length_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/length_loan')
     if response.status_code == 200:
@@ -64,7 +62,7 @@ def get_length_loan():
     else:
         st.error('Failed to get clients')
         return None
-  
+@st.cache_data      
 def get_payment_rate():
     response = requests.get(API_ADDRESS + '/api/statistics/payment_rate')
     if response.status_code == 200:
@@ -75,6 +73,7 @@ def get_payment_rate():
         return None
 
 # Plotting functions
+@st.cache_data  
 def plot_gender(data: dict):
 
     categories = {
@@ -114,6 +113,7 @@ def plot_gender(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_ages(data: dict):
 
     fig, ax = plt.subplots()
@@ -128,33 +128,72 @@ def plot_ages(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_loan(data: dict):
 
-    pie_df = pd.DataFrame.from_dict(data, orient='index', columns=['Count']).reset_index()
-    pie_df.columns = ['Status', 'Count']
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    fig = px.pie(pie_df, values='Count', names='Status')
+    colors = ['skyblue', 'lightcoral']
 
-    st.plotly_chart(fig, use_container_width=True)
- 
+    ax.pie(data.values(), labels=['Repaid', 'Defaulted'], autopct='%1.1f%%', radius=1, startangle=90, textprops={'fontsize': 12}, colors=colors)
+    inner_circle = plt.Circle((0, 0), 0.4, color='white')
+    ax.add_artist(inner_circle)
+
+    ax.axis('equal')
+
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+@st.cache_data  
 def plot_total_incomes(data: dict):
 
-    repaid_incomes = []
-    defaulted_incomes = []
+    incomes_defaulted = [int(value[0]) for value in data.values() if value[1] == 'defaulted']
+    incomes_repaid = [int(value[0]) for value in data.values() if value[1] == 'repaid']
 
-    for client_id, [income, status] in data.items():
-        if status == 'repaid':
-            repaid_incomes.append(income)
-        elif status == 'defaulted':
-            defaulted_incomes.append(income)
+    log_incomes_defaulted = np.log10(incomes_defaulted)
+    log_incomes_repaid = np.log10(incomes_repaid)
 
-    hist_data = [repaid_incomes, defaulted_incomes]
-    labels = ['repaid', 'defaulted']
+    mean_val_defaulted, mean_val_repaid = np.mean(incomes_defaulted), np.mean(incomes_repaid)
+    median_val_defaulted, median_val_repaid = np.median(incomes_defaulted), np.median(incomes_repaid)
+    max_val_defaulted, max_val_repaid = np.max(incomes_defaulted), np.max(incomes_repaid)
+    min_val_defaulted, min_val_repaid = np.min(incomes_defaulted), np.min(incomes_repaid)
 
-    fig = ff.create_distplot(hist_data, labels, bin_size=[0.25, 0.25])
+    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
 
-    st.plotly_chart(fig, use_container_width=True)
+    axs[0].hist(log_incomes_defaulted, bins=20, color='lightcoral', alpha=0.7)
+    axs[1].hist(log_incomes_repaid, bins=20, color='skyblue', alpha=0.7)
 
+    axs[0].set_xticks(np.arange(min(log_incomes_defaulted), max(log_incomes_defaulted)), [f"{10**val:.0f}" for val in np.arange(min(log_incomes_defaulted), max(log_incomes_defaulted))])
+    axs[1].set_xticks(np.arange(min(log_incomes_repaid), max(log_incomes_repaid)), [f"{10**val:.0f}" for val in np.arange(min(log_incomes_repaid), max(log_incomes_repaid))])
+
+    axs[0].text(0.05, 0.9, 'Defaulted', transform=axs[0].transAxes, fontsize=10, color='red')
+    axs[1].text(0.05, 0.9, 'Repaid', transform=axs[1].transAxes, fontsize=10, color='blue')
+
+    axs[0].axvline(np.log10(mean_val_defaulted), color='red', linestyle='dashed', linewidth=1, label=f'Mean: {round(mean_val_defaulted)}')
+    axs[0].axvline(np.log10(median_val_defaulted), color='green', linestyle='dashed', linewidth=1, label=f'Median: {round(median_val_defaulted)}')
+    axs[0].axvline(np.log10(max_val_defaulted), color='orange', linestyle='dashed', linewidth=1, label=f'Max: {round(max_val_defaulted)}')
+    axs[0].axvline(np.log10(min_val_defaulted), color='purple', linestyle='dashed', linewidth=1, label=f'Min: {round(min_val_defaulted)}')
+    
+    axs[1].axvline(np.log10(mean_val_repaid), color='red', linestyle='dashed', linewidth=1, label=f'Mean: {round(mean_val_repaid)}')
+    axs[1].axvline(np.log10(median_val_repaid), color='green', linestyle='dashed', linewidth=1, label=f'Median: {round(median_val_repaid)}')
+    axs[1].axvline(np.log10(max_val_repaid), color='orange', linestyle='dashed', linewidth=1, label=f'Max: {round(max_val_repaid)}')
+    axs[1].axvline(np.log10(min_val_repaid), color='purple', linestyle='dashed', linewidth=1, label=f'Min: {round(min_val_repaid)}')
+    
+    for i in [0, 1]: 
+        axs[i].spines['top'].set_visible(False)
+        axs[i].spines['right'].set_visible(False)
+        axs[i].spines['left'].set_visible(False)
+        axs[i].spines['bottom'].set_visible(False)
+
+    axs[0].legend()
+    axs[1].legend()
+
+    plt.tight_layout()
+
+    st.pyplot(fig, use_container_width=True)
+
+@st.cache_data  
 def plot_total_length_loan(data: dict):
 
     length_defaulted = []
@@ -208,6 +247,7 @@ def plot_total_length_loan(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
+@st.cache_data  
 def plot_total_payment_rates(data: dict):
 
     rate_defaulted = [value[0] for value in data.values() if value[1] == 'defaulted']

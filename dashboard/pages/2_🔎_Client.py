@@ -319,8 +319,8 @@ if clients:
 tab1, tab2,tab3, tab4, tab5, tab6 = st.tabs(['🆔 Personal information', 
                                             '🏦 Financial information', 
                                             '🎯 Prediction', 
+                                            '💼 Similar clients', 
                                             '📊 Local analysis', 
-                                            '🌍 Similar clients', 
                                             '🌍 Global analysis'
                                             ])
 
@@ -446,13 +446,7 @@ with tab3:
             st.markdown('**Should the loan request be accepted:**')
             st.markdown(info['repay'])
 
-
 with tab4:
-    if selected_info:
-        info = get_client_shap_values(selected_info)
-        plot_shap(info)
-
-with tab5:
     if selected_info:
         info = get_neighbors(selected_info)
 
@@ -480,3 +474,12 @@ with tab5:
             
             st.markdown('**Distribution of loan acceptance:**')
             plot_neighbors_loan_acceptance(selected_info, data)
+
+with tab5:
+    if selected_info:
+        info = get_client_shap_values(selected_info)
+        plot_shap(info)
+
+with tab6:
+    if selected_info:
+        st.markdown(selected_info)
