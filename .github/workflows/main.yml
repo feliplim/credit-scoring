@@ -58,6 +58,7 @@ jobs:
             # Check out repo so our workflow can access it
             - uses: actions/checkout@v2
 
+            # Steps for API
             # Set up the ECS Instance
             - name: Set up EC2 instance
               env: 
@@ -98,7 +99,6 @@ jobs:
                     fi
                 '
 
-            # Steps for API
             - name: Copy files inside the EC2 instance 
               env: 
                 AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
@@ -112,6 +112,7 @@ jobs:
                 scp -o StrictHostKeyChecking=no -i private_key -r Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/
                 scp -o StrictHostKeyChecking=no -i private_key -r api/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
+                scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded_extract.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
                 scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
                 
