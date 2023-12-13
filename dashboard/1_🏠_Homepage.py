@@ -163,7 +163,7 @@ def plot_total_incomes(data: dict):
 
     fig = ff.create_distplot(hist_data, labels, bin_size=[0.25, 0.25])
 
-    st.pyplot(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 @st.cache_data  
 def plot_total_length_loan(data: dict):
