@@ -109,8 +109,8 @@ jobs:
                     mkdir -p credit-scoring/data/processed
                     mkdir -p credit-scoring/models
                 '
-                scp -o StrictHostKeyChecking=no -i private_key -r Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/
-                scp -o StrictHostKeyChecking=no -i private_key -r api/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r api/Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/
+                scp -o StrictHostKeyChecking=no -i private_key -r api/main.py ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/test_feature_engineering_encoded.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r data/processed/train_feature_engineering_encoded_extract.csv.gz ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/data/processed/
                 scp -o StrictHostKeyChecking=no -i private_key -r models/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_API}:/home/ubuntu/credit-scoring/
@@ -182,8 +182,9 @@ jobs:
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
                     mkdir -p credit-scoring/dashboard/pages
                 '
-                scp -o StrictHostKeyChecking=no -i private_key -r Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/
-                scp -o StrictHostKeyChecking=no -i private_key -r dashboard/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/credit-scoring/
+                scp -o StrictHostKeyChecking=no -i private_key -r dashboard/Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/
+                scp -o StrictHostKeyChecking=no -i private_key -r dashboard/1_🏠_Homepage.py ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/credit-scoring/dashboard/
+                scp -o StrictHostKeyChecking=no -i private_key -r dashboard/pages/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/credit-scoring/dashboard/
                 scp -o StrictHostKeyChecking=no -i private_key -r requirements.txt ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/credit-scoring/
 
             - name: DASHBOARD - Create docker image
