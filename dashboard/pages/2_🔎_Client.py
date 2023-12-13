@@ -6,8 +6,9 @@ import numpy as np
 import plotly.graph_objects as go
 import seaborn as sns 
 import matplotlib.ticker as mtick
+import os
 
-API_ADDRESS = 'http://127.0.0.1:8000'
+API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
 # API
 @st.cache_data  
@@ -371,7 +372,7 @@ with tab2:
     if selected_info:
         info = get_client_bank_information(selected_info)
 
-        col1, col2= st.columns(2)
+        col1, col2 = st.columns(2)
 
         with col1: 
             col1_1, col1_2 = st.columns(2)
