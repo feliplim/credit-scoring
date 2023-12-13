@@ -3,8 +3,9 @@ import requests
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import os
 
-API_ADDRESS = 'http://127.0.0.1:8000'
+API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
 # API
 @st.cache_data  

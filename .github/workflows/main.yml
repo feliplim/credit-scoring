@@ -134,3 +134,71 @@ jobs:
                     sudo docker run -d -p 8000:8000 credit-scoring-app uvicorn main:app --proxy-headers --host=0.0.0.0 --port=8000
                 '
             # Steps for DASHBOARD
+            - name: Set up EC2 instance
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
+                AWS_PUBLIC_IP_ADDRESS_API: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_API }}
+              run: |
+                echo "$AWS_SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
+                  echo "export AWS_PUBLIC_IP_ADDRESS_API=${AWS_PUBLIC_IP_ADDRESS_API}" > ~/.bashrc
+                  sudo apt-get update
+                  sudo apt install -y nginx docker.io
+                  echo "server {
+                    listen 80;
+                    server_name ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }};
+                    location / {
+                        proxy_pass http://127.0.0.1:8000;
+                    }
+                  }" | sudo tee /etc/nginx/sites-enabled/fastapi_nginx > /dev/null
+                  sudo service nginx restart
+                '
+
+            # Stop running containers / images
+            - name: Stop running docker containers
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
+                    if [ "$(sudo docker ps -qa)" ]; then
+                        sudo docker stop $(sudo docker ps -qa) && sudo docker rm -v $(sudo docker ps -qa)
+                    else
+                        echo "No running containers found."
+                    fi
+
+                    if [ "$(sudo docker images -q)" ]; then
+                        sudo docker rmi $(sudo docker images -q)
+                    else
+                        echo "No Docker images found."
+                    fi
+                '
+            - name: Copy files inside the EC2 instance 
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
+                    mkdir -p credit-scoring/dashboard/pages
+                '
+                scp -o StrictHostKeyChecking=no -i private_key -r Dockerfile ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/
+                scp -o StrictHostKeyChecking=no -i private_key -r dashboard/ ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD}:/home/ubuntu/credit-scoring/
+
+            - name: Create docker image
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
+                    sudo docker build -t credit-scoring-app:latest .
+                '
+
+            - name: Run docker
+              env: 
+                AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+                AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
+              run: |
+                ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
+                    sudo docker run -d -p 8000:8000 credit-scoring-app streamlit run 1_🏠_Homepage.py --server.port 8000 --server.enableCORS false
+                '
