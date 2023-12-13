@@ -5,11 +5,12 @@ import pandas as pd
 import numpy as np
 import os
 import plotly.figure_factory as ff
+import plotly.express as px
+import pandas as pd
 
 API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
 # API
-@st.cache_data  
 def get_genders():
     response = requests.get(API_ADDRESS + '/api/statistics/genders')
     if response.status_code == 200: 
@@ -18,7 +19,7 @@ def get_genders():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data      
+
 def get_ages():
     response = requests.get(API_ADDRESS + '/api/statistics/ages')
     if response.status_code == 200: 
@@ -27,7 +28,7 @@ def get_ages():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data      
+
 def get_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/loans')
     if response.status_code == 200: 
@@ -36,7 +37,7 @@ def get_loan():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data      
+   
 def get_incomes():
     response = requests.get(API_ADDRESS + '/api/statistics/total_incomes')
     if response.status_code == 200:
@@ -45,7 +46,7 @@ def get_incomes():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data      
+  
 def get_credits():
     response = requests.get(API_ADDRESS + '/api/statistics/credits')
     if response.status_code == 200:
@@ -54,7 +55,7 @@ def get_credits():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data  
+
 def get_length_loan():
     response = requests.get(API_ADDRESS + '/api/statistics/length_loan')
     if response.status_code == 200:
@@ -63,7 +64,7 @@ def get_length_loan():
     else:
         st.error('Failed to get clients')
         return None
-@st.cache_data      
+  
 def get_payment_rate():
     response = requests.get(API_ADDRESS + '/api/statistics/payment_rate')
     if response.status_code == 200:
@@ -129,19 +130,12 @@ def plot_ages(data: dict):
 
 def plot_loan(data: dict):
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    pie_df = pd.DataFrame.from_dict(data, orient='index', columns=['Count']).reset_index()
+    pie_df.columns = ['Status', 'Count']
 
-    colors = ['skyblue', 'lightcoral']
+    fig = px.pie(pie_df, values='Count', names='Status')
 
-    ax.pie(data.values(), labels=['Repaid', 'Defaulted'], autopct='%1.1f%%', radius=1, startangle=90, textprops={'fontsize': 12}, colors=colors)
-    inner_circle = plt.Circle((0, 0), 0.4, color='white')
-    ax.add_artist(inner_circle)
-
-    ax.axis('equal')
-
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
  
 def plot_total_incomes(data: dict):
 
