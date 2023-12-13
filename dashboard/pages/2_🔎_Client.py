@@ -316,11 +316,13 @@ if clients:
     selected_info = st.selectbox('Select client', clients)
     st.markdown('')
 
-tab1, tab2,tab3, tab4, tab5 = st.tabs(['🆔 Personal information', 
-                                       '🏦 Financial information', 
-                                       '🎯 Prediction', 
-                                       '📊 Local analysis', 
-                                       '🌍 Similar clients'])
+tab1, tab2,tab3, tab4, tab5, tab6 = st.tabs(['🆔 Personal information', 
+                                            '🏦 Financial information', 
+                                            '🎯 Prediction', 
+                                            '📊 Local analysis', 
+                                            '🌍 Similar clients', 
+                                            '🌍 Global analysis'
+                                            ])
 
 with tab1:
     if selected_info:
