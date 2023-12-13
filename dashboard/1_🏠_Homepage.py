@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
+import plotly.figure_factory as ff
 
 API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
@@ -148,48 +149,19 @@ def plot_loan(data: dict):
 @st.cache_data  
 def plot_total_incomes(data: dict):
 
-    incomes_defaulted = [int(value[0]) for value in data.values() if value[1] == 'defaulted']
-    incomes_repaid = [int(value[0]) for value in data.values() if value[1] == 'repaid']
+    repaid_incomes = []
+    defaulted_incomes = []
 
-    log_incomes_defaulted = np.log10(incomes_defaulted)
-    log_incomes_repaid = np.log10(incomes_repaid)
+    for client_id, [income, status] in data.items():
+        if status == 'repaid':
+            repaid_incomes.append(income)
+        elif status == 'defaulted':
+            defaulted_incomes.append(income)
 
-    mean_val_defaulted, mean_val_repaid = np.mean(incomes_defaulted), np.mean(incomes_repaid)
-    median_val_defaulted, median_val_repaid = np.median(incomes_defaulted), np.median(incomes_repaid)
-    max_val_defaulted, max_val_repaid = np.max(incomes_defaulted), np.max(incomes_repaid)
-    min_val_defaulted, min_val_repaid = np.min(incomes_defaulted), np.min(incomes_repaid)
+    hist_data = [repaid_incomes, defaulted_incomes]
+    lables = ['repaid', 'defaulted']
 
-    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
-
-    axs[0].hist(log_incomes_defaulted, bins=20, color='lightcoral', alpha=0.7)
-    axs[1].hist(log_incomes_repaid, bins=20, color='skyblue', alpha=0.7)
-
-    axs[0].set_xticks(np.arange(min(log_incomes_defaulted), max(log_incomes_defaulted)), [f"{10**val:.0f}" for val in np.arange(min(log_incomes_defaulted), max(log_incomes_defaulted))])
-    axs[1].set_xticks(np.arange(min(log_incomes_repaid), max(log_incomes_repaid)), [f"{10**val:.0f}" for val in np.arange(min(log_incomes_repaid), max(log_incomes_repaid))])
-
-    axs[0].text(0.05, 0.9, 'Defaulted', transform=axs[0].transAxes, fontsize=10, color='red')
-    axs[1].text(0.05, 0.9, 'Repaid', transform=axs[1].transAxes, fontsize=10, color='blue')
-
-    axs[0].axvline(np.log10(mean_val_defaulted), color='red', linestyle='dashed', linewidth=1, label=f'Mean: {round(mean_val_defaulted)}')
-    axs[0].axvline(np.log10(median_val_defaulted), color='green', linestyle='dashed', linewidth=1, label=f'Median: {round(median_val_defaulted)}')
-    axs[0].axvline(np.log10(max_val_defaulted), color='orange', linestyle='dashed', linewidth=1, label=f'Max: {round(max_val_defaulted)}')
-    axs[0].axvline(np.log10(min_val_defaulted), color='purple', linestyle='dashed', linewidth=1, label=f'Min: {round(min_val_defaulted)}')
-    
-    axs[1].axvline(np.log10(mean_val_repaid), color='red', linestyle='dashed', linewidth=1, label=f'Mean: {round(mean_val_repaid)}')
-    axs[1].axvline(np.log10(median_val_repaid), color='green', linestyle='dashed', linewidth=1, label=f'Median: {round(median_val_repaid)}')
-    axs[1].axvline(np.log10(max_val_repaid), color='orange', linestyle='dashed', linewidth=1, label=f'Max: {round(max_val_repaid)}')
-    axs[1].axvline(np.log10(min_val_repaid), color='purple', linestyle='dashed', linewidth=1, label=f'Min: {round(min_val_repaid)}')
-    
-    for i in [0, 1]: 
-        axs[i].spines['top'].set_visible(False)
-        axs[i].spines['right'].set_visible(False)
-        axs[i].spines['left'].set_visible(False)
-        axs[i].spines['bottom'].set_visible(False)
-
-    axs[0].legend()
-    axs[1].legend()
-
-    plt.tight_layout()
+    fig = ff.create_distplot(hist_data, labels, bin_size=[0.25, 0.25])
 
     st.pyplot(fig, use_container_width=True)
 
