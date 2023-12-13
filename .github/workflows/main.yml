@@ -142,7 +142,7 @@ jobs:
               run: |
                 echo "$AWS_SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
-                  echo "export AWS_PUBLIC_IP_ADDRESS_API=${AWS_PUBLIC_IP_ADDRESS_API}" > ~/.bashrc
+                  echo "export AWS_PUBLIC_IP_ADDRESS_API=${{ secrets.AWS_PUBLIC_IP_ADDRESS_API }}" > ~/.bashrc
                   sudo apt-get update
                   sudo apt install -y nginx docker.io
                   echo "server {
