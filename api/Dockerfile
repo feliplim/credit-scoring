@@ -1,6 +1,8 @@
 # Use the official Python image for 3.11
 FROM python:3.11
 
+RUN pip install --upgrade
+
 # Set the working directory inside the container
 WORKDIR /app
 
