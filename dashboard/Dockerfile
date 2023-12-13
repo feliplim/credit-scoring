@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the rest of the application's code into the container
 COPY credit-scoring/ .
 
+# Expose default streamlit door
+EXPOSE 8501
+
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
