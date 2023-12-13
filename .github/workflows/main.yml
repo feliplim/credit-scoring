@@ -149,7 +149,7 @@ jobs:
                     listen 80;
                     server_name ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }};
                     location / {
-                        proxy_pass http://127.0.0.1:8000;
+                        proxy_pass http://127.0.0.1:8501;
                     }
                   }" | sudo tee /etc/nginx/sites-enabled/fastapi_nginx > /dev/null
                   sudo service nginx restart
@@ -202,5 +202,5 @@ jobs:
                 AWS_PUBLIC_IP_ADDRESS_DASHBOARD: ${{ secrets.AWS_PUBLIC_IP_ADDRESS_DASHBOARD }}
               run: |
                 ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${AWS_PUBLIC_IP_ADDRESS_DASHBOARD} '
-                    sudo docker run -d -p 8000:8000 credit-scoring-app streamlit run 1_🏠_Homepage.py --server.port 8000 --server.enableCORS false
+                    sudo docker run -d -p 8501:8501 credit-scoring-app streamlit run 1_🏠_Homepage.py --server.port 8501 --server.enableCORS false
                 '
