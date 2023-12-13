@@ -74,7 +74,6 @@ def get_payment_rate():
         return None
 
 # Plotting functions
-@st.cache_data  
 def plot_gender(data: dict):
 
     categories = {
@@ -114,7 +113,6 @@ def plot_gender(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
-@st.cache_data  
 def plot_ages(data: dict):
 
     fig, ax = plt.subplots()
@@ -129,7 +127,6 @@ def plot_ages(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
-@st.cache_data  
 def plot_loan(data: dict):
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -145,8 +142,7 @@ def plot_loan(data: dict):
     plt.tight_layout()
 
     st.pyplot(fig, use_container_width=True)
-
-@st.cache_data  
+ 
 def plot_total_incomes(data: dict):
 
     repaid_incomes = []
@@ -165,7 +161,6 @@ def plot_total_incomes(data: dict):
 
     st.plotly_chart(fig, use_container_width=True)
 
-@st.cache_data  
 def plot_total_length_loan(data: dict):
 
     length_defaulted = []
@@ -219,7 +214,6 @@ def plot_total_length_loan(data: dict):
 
     st.pyplot(fig, use_container_width=True)
 
-@st.cache_data  
 def plot_total_payment_rates(data: dict):
 
     rate_defaulted = [value[0] for value in data.values() if value[1] == 'defaulted']
