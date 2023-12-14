@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 import seaborn as sns 
 import matplotlib.ticker as mtick
 import os
+import plotly.figure_factory as ff
+import plotly.express as px
 
 API_ADDRESS = 'http://' + str(os.environ['AWS_PUBLIC_IP_ADDRESS_API'])
 
@@ -21,7 +23,8 @@ def get_clients():
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data 
 def get_client_personal_information(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/personal_information')
     if response.status_code == 200: 
@@ -30,7 +33,8 @@ def get_client_personal_information(id):
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data 
 def get_client_bank_information(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/bank_information')
     if response.status_code == 200: 
@@ -39,7 +43,8 @@ def get_client_bank_information(id):
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data 
 def get_client_prediction(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction')
     if response.status_code == 200: 
@@ -48,7 +53,8 @@ def get_client_prediction(id):
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data 
 def get_client_shap_values(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/shap/local')
     if response.status_code == 200: 
@@ -57,7 +63,8 @@ def get_client_shap_values(id):
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data  
 def get_model_shap_values(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/shap/global')
     if response.status_code == 200: 
@@ -66,7 +73,8 @@ def get_model_shap_values(id):
     else:
         st.error('Failed to get clients')
         return None
-    
+
+@st.cache_data 
 def get_neighbors(id):
     response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors')
     if response.status_code == 200: 
@@ -76,232 +84,134 @@ def get_neighbors(id):
         st.error('Failed to get clients')
         return None
 
+@st.cache_data 
+def get_neighbors_total_income(id): 
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors/totalIncome')
+    if response.status_code == 200: 
+        data = response.json()
+        return data
+    else:
+        st.error('Failed to get clients')
+        return None
+
+@st.cache_data  
+def get_neighbors_score(id): 
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors/score')
+    if response.status_code == 200: 
+        data = response.json()
+        return data
+    else:
+        st.error('Failed to get clients')
+        return None
+    
+@st.cache_data 
+def get_neighbors_credit_amount(id): 
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors/amtCredit')
+    if response.status_code == 200: 
+        data = response.json()
+        return data
+    else:
+        st.error('Failed to get clients')
+        return None
+    
+@st.cache_data 
+def get_neighbors_loan_duration(id): 
+    response = requests.get(API_ADDRESS + f'/api/clients/{id}/prediction/neighbors/loanLength')
+    if response.status_code == 200: 
+        data = response.json()
+        return data
+    else:
+        st.error('Failed to get clients')
+        return None
 
 # Plot functions
 def plot_score(value): 
-    colors = ['green', 'green', 'yellow', 'yellow', 'yellow', 'yellow', 'red', 'red', 'red', 'red']
-    values = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 0]
+    if value < 400:
+        color = 'red'
+    elif value < 800:
+        color = 'yellow'
+    else:
+        color = 'green'
 
-    x_axis_vals = [0, 0.314, 0.628, 0.942, 1.256, 1.57, 1.884, 2.198, 2.512, 2.826]
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        gauge={'axis': {'range': [0, 1000]}, 'bar': {'color': color}}
+    ))
 
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(projection='polar')
-    ax.set_thetamin(180)
-    ax.set_thetamax(0)
-
-    ax.bar(x=x_axis_vals, width=0.5, height=0.5, bottom=2, linewidth=3, edgecolor='white', color=colors, align='edge')
-
-    for loc, val in zip([0, 0.314, 0.628, 0.942, 1.256, 1.57, 1.884, 2.198, 2.512, 2.826, 3.14], values):
-        plt.annotate(val, xy=(loc, 2.5), ha='right' if val < 600 else 'left')
-
-    position = 3.14 - (value/1000)*3.14
-
-    plt.annotate(str(value), xytext=(0, 0), xy=(position, 2.0),
-                arrowprops=dict(arrowstyle='wedge, tail_width=0.4', color='black', shrinkA=0),
-                bbox=dict(boxstyle='circle', facecolor='black', linewidth=2.0),
-                fontsize=25, color='white', ha='center'
-                )
-
-    ax.set_axis_off()
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_likelihood(repay, default, threshold):
-    colors = ['green', 'red']
     data = {
         'Likelihood': ['To repay', 'To default'], 
-        'Probability': [repay, default]
+        'Probability (%)': [round(100*repay, 2), round(100*default, 2)]
     }
     df = pd.DataFrame(data)
+    df = df.set_index('Likelihood')
 
-    fig, ax = plt.subplots()
-    ax.bar(df['Likelihood'], df['Probability'], color=colors)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-
-    ax.set_ylim(0, 1)
-    ax.axhline(y=threshold, color='darkred', linestyle='--', linewidth=1)
-
-    plt.xticks(ha='center')
-
-    st.pyplot(fig, use_container_width=True)
+    st.bar_chart(df, use_container_width=True)
 
 def plot_extsources(ext1, ext2, ext3):
-    colors = ['orange', 'purple', 'blue']
     data = {
         'External source': ['1', '2', '3'], 
         'Values': [ext1, ext2, ext3]
     }
     df = pd.DataFrame(data)
+    df = df.set_index('External source')
 
-    fig, ax = plt.subplots()
-    ax.bar(df['External source'], df['Values'], color=colors)
-    
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
+    st.bar_chart(df, use_container_width=True)
 
-    ax.set_ylim(0, 1)
+def plot_shap(data: dict):
 
-    plt.xticks(ha='center')
+    df = pd.DataFrame({'Features': data.keys(), 'Importance': data.values()})
+    df['Color'] = df['Importance'].apply(lambda x: 'positive' if x >= 0 else 'negative')
 
-    st.pyplot(fig, use_container_width=True)
+    colors = {'positive': 'blue', 'negative': 'red'}
 
-def plot_shap(data):
-    feature_names = list(data.keys())
-    shap_values = list(data.values())
-
-    sorted_idx = np.argsort(np.abs(shap_values))
-
-    sorted_shap_values = [shap_values[i] for i in sorted_idx]
-    sorted_feature_names = [feature_names[i] for i in sorted_idx]
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-    colors = ['green' if val >= 0 else 'red' for val in sorted_shap_values]
-    ax.barh(sorted_feature_names, sorted_shap_values, color=colors)
-    ax.set_xlim(-1, 1)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
-
-def plot_elements(central: int, neighbors: list, similarity_scores: list):
-
-    sorted_elements = [x for _, x in sorted(zip(similarity_scores, neighbors))]
-    sorted_scores = sorted(similarity_scores)
-
-    angles = [i * 2 * np.pi / (len(neighbors) + 1) for i in range(1, len(neighbors) + 1)]
-    x_values = [(1 - s + 1) * np.cos(angle) for s, angle in zip(sorted_scores, angles)]
-    y_values = [(1 - s + 1) * np.sin(angle) for s, angle in zip(sorted_scores, angles)]
-    text_sizes = [int(s * 18) if s > 0.5 else 9 for s in sorted_scores]
-    circle_sizes = [s * 50 if s > 0.5 else 25 for s in sorted_scores]
-
-    fig = go.Figure()
-
-    # Add circles for surrounding elements
-    for x, y, circle_size, text, score, text_size in zip(x_values, y_values, circle_sizes, sorted_elements, sorted_scores, text_sizes):
-        fig.add_trace(go.Scatter(x=[x], y=[y], mode="markers+text", 
-                                 text=str(text), textposition='middle center', textfont=dict(size=text_size, color='black'),
-                                 marker=dict(size=circle_size, color='lightblue'),
-                                 hoverinfo="text",
-                                 hovertext=[f'{round(100*score, 2)}%'],
-                                 showlegend=False))
-
-    # Add the central element
-    fig.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", text=str(central),
-                             textposition='middle center', textfont=dict(size=20, color='black'),
-                             marker=dict(size=60, color='orange'),
-                             hoverinfo='none',
-                             showlegend=False))
-
-    fig.update_layout(
-        xaxis=dict(range=[-2.5, 2.5], zeroline=False, showgrid=False, visible=False),
-        yaxis=dict(range=[-2.5, 2.5], zeroline=False, showgrid=False, visible=False),
-        hovermode='closest',
-        height=500,
-        width=500
-    )
-
+    fig = px.bar(df, x='Importance', y='Features', color='Color', color_discrete_map=colors)
+    fig.update_layout(barmode='group', xaxis={'categoryorder': 'total descending'})
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_neighbors_similarities(central, neighbors, similarities):
+def plot_neighbors_scores(data):
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    similarities = [100*item for item in similarities]
-    ax.bar(range(1, len(neighbors)+1), similarities, color='orange', width=0.5)
+    tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
+    with tab1: 
+        st.plotly_chart(fig_yes, use_container_width=True)
+    with tab2:
+        st.plotly_chart(fig_no, use_container_width=True)
 
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_ylim(0, 100)
-    ax.set_xlim([0, len(neighbors)+1])
+def plot_neighbors_annual_income(data):
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
 
-    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
+    with tab1: 
+        st.plotly_chart(fig_yes, use_container_width=True)
+    with tab2:
+        st.plotly_chart(fig_no, use_container_width=True)
 
-    plt.legend()
-    plt.tight_layout()
+def plot_neighbors_credit_amount(data):
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
 
-    st.pyplot(fig, use_container_width=True)
+    tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
+    with tab1: 
+        st.plotly_chart(fig_yes, use_container_width=True)
+    with tab2:
+        st.plotly_chart(fig_no, use_container_width=True)
 
-def plot_neighbors_scores(central, data):
+def plot_neighbors_loan_duration(data):
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
 
-    central = get_client_prediction(central)
-
-    scores = {item['clientId']: item['score'] for item in data}
-
-    neighbors = list(scores.keys())
-    scores = list(scores.values())
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.bar(range(1, len(scores)+1), scores, color='orange', width=0.5)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_ylim(0, max(scores) * 1.1)  
-    ax.set_xlim([0, len(neighbors)+1])
-
-    plt.axhline(y=central['score'], color='red', linestyle='--', label=central['clientId'])
-    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
-
-    plt.legend()
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
-
-def plot_neighbors_loan_acceptance(central, data):
-
-    central = get_client_prediction(central)
-
-    loan_acceptance = {item['clientId']: item['repay'] for item in data}
-    df = pd.DataFrame.from_dict(loan_acceptance, orient='index', columns=['repay'])
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-    df['repay'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax)
-    ax.set_ylabel('')
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
-
-def plot_neighbors_annual_income(central, data):
-
-    central = get_client_bank_information(central)
-
-    annual_income = {item['clientId']: item['totalIncome'] for item in data}
-
-    neighbors = list(annual_income.keys())
-    incomes = list(annual_income.values())
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.bar(range(1, len(incomes)+1), incomes, color='orange', width=0.5)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_ylim(0, max(incomes) * 1.1)  
-    ax.set_xlim([0, len(neighbors)+1])
-
-    plt.axhline(y=central['totalIncome'], color='red', linestyle='--', label=central['clientId'])
-    ax.set_xticks(range(1, len(neighbors)+1), neighbors, rotation=45)
-
-    plt.legend()
-    plt.tight_layout()
-
-    st.pyplot(fig, use_container_width=True)
+    tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
+    with tab1: 
+        st.plotly_chart(fig_yes, use_container_width=True)
+    with tab2:
+        st.plotly_chart(fig_no, use_container_width=True)
 
 st.set_page_config(
     page_title='Prêt à dépenser - Default Risk - Client',
@@ -434,52 +344,49 @@ with tab3:
             st.markdown('**Credit score:**')
             plot_score(info['score'])
             st.markdown('**Threshold of selection:**')
-            st.markdown('Probability of defaulting superior to ' + str(info['threshold']))
+            st.markdown('Loan request should not be accepted if the probability of defaulting superior is to ' + str(round(100*info['threshold'], 2)) + '%')
 
         with col2: 
             st.markdown('**Likelihood:**')
-            st.markdown('')
-            st.markdown('')
             plot_likelihood(info['probability0'], info['probability1'], info['threshold'])
-            st.markdown('')
-            st.markdown('')
+            st.markdown('\n')
+            st.markdown('\n')
+            st.markdown('\n')
+            st.markdown('\n')
+            st.markdown('\n')
+            st.markdown('\n')
             st.markdown('**Should the loan request be accepted:**')
             st.markdown(info['repay'])
 
 with tab4:
     if selected_info:
-        info = get_neighbors(selected_info)
-
         col1, col2 = st.columns(2)
         with col1: 
-            st.markdown('**Similarity between clients:**')
-            plot_neighbors_similarities(selected_info, list(info.keys()), list(info.values()))
+            st.markdown('**Distribution of annual income:**')
+            data = get_neighbors_total_income(selected_info)
+            plot_neighbors_annual_income(data)
             st.markdown('\n')
 
-            st.markdown('**Distribution of annual income:**')
-            data = []
-            for neighbor in list(info.keys()):
-                data.append(get_client_bank_information(neighbor))
-            plot_neighbors_annual_income(selected_info, data)
-
-
+            st.markdown('**Distribution of credit amount:**')
+            data = get_neighbors_credit_amount(selected_info)
+            plot_neighbors_credit_amount(data)
 
         with col2:
-            st.markdown('**Distribution of score:**')
-            data = []
-            for neighbor in list(info.keys()):
-                data.append(get_client_prediction(neighbor))
-            plot_neighbors_scores(selected_info, data)
+            st.markdown('**Distribution of credit score:**')
+            data = get_neighbors_score(selected_info)
+            plot_neighbors_scores(data)
             st.markdown('\n')
-            
-            st.markdown('**Distribution of loan acceptance:**')
-            plot_neighbors_loan_acceptance(selected_info, data)
+
+            st.markdown('**Distribution of loan duration in months:**')
+            data = get_neighbors_loan_duration(selected_info)
+            plot_neighbors_loan_duration(data)
 
 with tab5:
     if selected_info:
-        info = get_client_shap_values(selected_info)
-        plot_shap(info)
+        data = get_client_shap_values(selected_info)
+        plot_shap(data)
 
 with tab6:
     if selected_info:
-        st.markdown(selected_info)
+        info = get_model_shap_values(selected_info)
+        plot_shap(info)
