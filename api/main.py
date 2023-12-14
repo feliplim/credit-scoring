@@ -52,7 +52,7 @@ app = FastAPI(title='Home Credit Default Risk',
               version='0.1.0')
 
 # Set global variables
-N_NEIGHBORS = 50
+N_NEIGHBORS = 1000
 CUSTOM_THRESHOLD = 0.274
 
 # Get dataframes
@@ -88,6 +88,7 @@ async def get_clients_id():
     clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
     return {'clientsID': clients_id}
 
+# Endpoints to get information about the current client
 @app.get('/api/clients/{id}/personal_information')
 async def get_client_personal_information(id: int):
     '''
@@ -196,7 +197,8 @@ async def get_prediction(id: int):
 
 @app.get('/api/clients/{id}/prediction/shap/local')
 async def get_local_shap(id: int):
-
+    ''' Endpoint to get local shap values
+    '''
     clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
 
     if id not in clients_id:
@@ -211,10 +213,7 @@ async def get_local_shap(id: int):
         top_feature_shap_values = shap_values_idx[top_feature_indices]
 
 
-    client_shap = {
-        #'clientId': id, 
-        #'shapPosition': idx, 
-    }
+    client_shap = {}
 
     for name, value in zip(top_feature_names, top_feature_shap_values):
         client_shap[name] = value
@@ -223,7 +222,8 @@ async def get_local_shap(id: int):
 
 @app.get('/api/clients/{id}/prediction/shap/global')
 async def get_global_shap(id: int):
-
+    ''' Endpoint to get global shap values
+    '''
     clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
 
     if id not in clients_id:
@@ -235,18 +235,17 @@ async def get_global_shap(id: int):
         shap_values_summary = pd.DataFrame(shap_values[0], columns=feature_names)
         top_global_features = shap_values_summary.abs().mean().nlargest(10)
 
-    client_shap = {
-        #'clientId': id, 
-        #'shapPosition': idx, 
-    }
+    client_shap = {}
 
     client_shap.update(top_global_features.to_dict())
 
     return client_shap
 
+# Endpoints to get information about the neighbors / similar clients
 @app.get('/api/clients/{id}/prediction/neighbors')
 async def get_neighbors(id: int):
-
+    ''' Endpoint to get all neighbors of the current client and their similarity score
+    '''
     clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
 
     if id not in clients_id:
@@ -269,6 +268,212 @@ async def get_neighbors(id: int):
 
     return result
 
+@app.get('/api/clients/{id}/prediction/neighbors/totalIncome')
+async def get_neighbors_total_income(id: int):
+    ''' Endpoint to get the total income of the neighbors of the current client
+    '''
+    clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
+
+    if id not in clients_id:
+        raise HTTPException(status_code=404, detail='Client id not found')
+    else:
+        idx = int(list(clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].index.values)[0])
+
+        client_idx = clients_to_predict_scaled.drop(columns=['SK_ID_CURR']).iloc[idx].values.reshape(1, -1)
+
+        distances, indices = knn.kneighbors(client_idx)
+        indices = [int(item) for item in indices[0]]
+        indices = indices[1:]
+        neighbors = clients_to_predict_scaled.iloc[indices]['SK_ID_CURR'].astype(int).tolist()
+        client_info = []
+
+        for neighbor in neighbors:
+            globals()['df_' + str(neighbor)] = clients_to_predict[clients_to_predict['SK_ID_CURR'] == neighbor]
+            globals()['df_' + str(neighbor)] = globals()['df_' + str(neighbor)].drop(globals()['df_' + str(neighbor)].columns[[0]], axis=1)
+
+            result_proba = lgbm.predict_proba(globals()['df_' + str(neighbor)])
+            y_prob = result_proba[:, 1]
+
+            result = (y_prob >= CUSTOM_THRESHOLD).astype(int)
+
+            if (int(result[0]) == 0):
+                result = 'Yes'
+            else:
+                result = 'No'    
+
+            client_info.append({'clientId': neighbor, 
+                                'repay' : result,
+                                'score' : round(1000*result_proba[0][0]),
+                                'probability0' : result_proba[0][0],
+                                'probability1' : result_proba[0][1],
+                                'threshold' : CUSTOM_THRESHOLD})
+
+        repayment_status = {client['clientId']: client['repay'] for client in client_info}
+        filtered_df = clients_to_predict[clients_to_predict['SK_ID_CURR'].isin(neighbors)]
+        filtered_df['repay'] = filtered_df['SK_ID_CURR'].map(repayment_status)
+
+        income_yes = filtered_df[filtered_df['repay'] == 'Yes']['AMT_INCOME_TOTAL'].tolist()
+        income_no = filtered_df[filtered_df['repay'] == 'No']['AMT_INCOME_TOTAL'].tolist()
+
+        result = {'Yes': income_yes, 'No': income_no}
+        return result
+    
+@app.get('/api/clients/{id}/prediction/neighbors/score')
+async def get_neighbors_score(id: int):
+    ''' Endpoint to get the score of the neighbors of the current client
+    '''
+    clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
+
+    if id not in clients_id:
+        raise HTTPException(status_code=404, detail='Client id not found')
+    else:
+        idx = int(list(clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].index.values)[0])
+
+        client_idx = clients_to_predict_scaled.drop(columns=['SK_ID_CURR']).iloc[idx].values.reshape(1, -1)
+
+        distances, indices = knn.kneighbors(client_idx)
+        indices = [int(item) for item in indices[0]]
+        indices = indices[1:]
+        neighbors = clients_to_predict_scaled.iloc[indices]['SK_ID_CURR'].astype(int).tolist()
+        client_info = []
+
+        for neighbor in neighbors:
+            globals()['df_' + str(neighbor)] = clients_to_predict[clients_to_predict['SK_ID_CURR'] == neighbor]
+            globals()['df_' + str(neighbor)] = globals()['df_' + str(neighbor)].drop(globals()['df_' + str(neighbor)].columns[[0]], axis=1)
+
+            result_proba = lgbm.predict_proba(globals()['df_' + str(neighbor)])
+            y_prob = result_proba[:, 1]
+
+            result = (y_prob >= CUSTOM_THRESHOLD).astype(int)
+
+            if (int(result[0]) == 0):
+                result = 'Yes'
+            else:
+                result = 'No'    
+
+            client_info.append({'clientId': neighbor, 
+                                'repay' : result,
+                                'score' : round(1000*result_proba[0][0]),
+                                'probability0' : result_proba[0][0],
+                                'probability1' : result_proba[0][1],
+                                'threshold' : CUSTOM_THRESHOLD})
+            
+        repayment_status = {client['clientId']: client['repay'] for client in client_info}
+        scores = {client['clientId']: client['score'] for client in client_info}
+
+        filtered_df = clients_to_predict[clients_to_predict['SK_ID_CURR'].isin(neighbors)]
+        filtered_df['repay'] = filtered_df['SK_ID_CURR'].map(repayment_status)
+        filtered_df['score'] = filtered_df['SK_ID_CURR'].map(scores)
+
+        score_yes = filtered_df[filtered_df['repay'] == 'Yes']['score'].tolist()
+        score_no = filtered_df[filtered_df['repay'] == 'No']['score'].tolist()
+
+        result = {'Yes': score_yes, 'No': score_no}
+        return result
+
+@app.get('/api/clients/{id}/prediction/neighbors/amtCredit')
+async def get_neighbors_credit_amount(id: int):
+    ''' Endpoint to get the credit amount of the neighbors of the current client
+    '''
+    clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
+
+    if id not in clients_id:
+        raise HTTPException(status_code=404, detail='Client id not found')
+    else:
+        idx = int(list(clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].index.values)[0])
+
+        client_idx = clients_to_predict_scaled.drop(columns=['SK_ID_CURR']).iloc[idx].values.reshape(1, -1)
+
+        distances, indices = knn.kneighbors(client_idx)
+        indices = [int(item) for item in indices[0]]
+        indices = indices[1:]
+        neighbors = clients_to_predict_scaled.iloc[indices]['SK_ID_CURR'].astype(int).tolist()
+        client_info = []
+
+        for neighbor in neighbors:
+            globals()['df_' + str(neighbor)] = clients_to_predict[clients_to_predict['SK_ID_CURR'] == neighbor]
+            globals()['df_' + str(neighbor)] = globals()['df_' + str(neighbor)].drop(globals()['df_' + str(neighbor)].columns[[0]], axis=1)
+
+            result_proba = lgbm.predict_proba(globals()['df_' + str(neighbor)])
+            y_prob = result_proba[:, 1]
+
+            result = (y_prob >= CUSTOM_THRESHOLD).astype(int)
+
+            if (int(result[0]) == 0):
+                result = 'Yes'
+            else:
+                result = 'No'    
+
+            client_info.append({'clientId': neighbor, 
+                                'repay' : result,
+                                'score' : round(1000*result_proba[0][0]),
+                                'probability0' : result_proba[0][0],
+                                'probability1' : result_proba[0][1],
+                                'threshold' : CUSTOM_THRESHOLD})
+
+        repayment_status = {client['clientId']: client['repay'] for client in client_info}
+        filtered_df = clients_to_predict[clients_to_predict['SK_ID_CURR'].isin(neighbors)]
+        filtered_df['repay'] = filtered_df['SK_ID_CURR'].map(repayment_status)
+
+        income_yes = filtered_df[filtered_df['repay'] == 'Yes']['AMT_CREDIT'].tolist()
+        income_no = filtered_df[filtered_df['repay'] == 'No']['AMT_CREDIT'].tolist()
+
+        result = {'Yes': income_yes, 'No': income_no}
+        return result
+    
+@app.get('/api/clients/{id}/prediction/neighbors/loanLength')
+async def get_neighbors_credit_amount(id: int):
+    ''' Endpoint to get the duration of the loan of the neighbors of the current client
+    '''
+    clients_id = clients_to_predict['SK_ID_CURR'].astype(int).tolist()
+
+    if id not in clients_id:
+        raise HTTPException(status_code=404, detail='Client id not found')
+    else:
+        idx = int(list(clients_to_predict[clients_to_predict['SK_ID_CURR'] == id].index.values)[0])
+
+        client_idx = clients_to_predict_scaled.drop(columns=['SK_ID_CURR']).iloc[idx].values.reshape(1, -1)
+
+        distances, indices = knn.kneighbors(client_idx)
+        indices = [int(item) for item in indices[0]]
+        indices = indices[1:]
+        neighbors = clients_to_predict_scaled.iloc[indices]['SK_ID_CURR'].astype(int).tolist()
+        client_info = []
+
+        for neighbor in neighbors:
+            globals()['df_' + str(neighbor)] = clients_to_predict[clients_to_predict['SK_ID_CURR'] == neighbor]
+            globals()['df_' + str(neighbor)] = globals()['df_' + str(neighbor)].drop(globals()['df_' + str(neighbor)].columns[[0]], axis=1)
+
+            result_proba = lgbm.predict_proba(globals()['df_' + str(neighbor)])
+            y_prob = result_proba[:, 1]
+
+            result = (y_prob >= CUSTOM_THRESHOLD).astype(int)
+
+            if (int(result[0]) == 0):
+                result = 'Yes'
+            else:
+                result = 'No'    
+
+            client_info.append({'clientId': neighbor, 
+                                'repay' : result,
+                                'score' : round(1000*result_proba[0][0]),
+                                'probability0' : result_proba[0][0],
+                                'probability1' : result_proba[0][1],
+                                'threshold' : CUSTOM_THRESHOLD})
+
+        repayment_status = {client['clientId']: client['repay'] for client in client_info}
+        filtered_df = clients_to_predict[clients_to_predict['SK_ID_CURR'].isin(neighbors)]
+        filtered_df['repay'] = filtered_df['SK_ID_CURR'].map(repayment_status)
+
+        filtered_df['loanLength'] = 12*(filtered_df['AMT_CREDIT'].astype(float) / filtered_df['AMT_ANNUITY'].astype(float))
+
+        income_yes = filtered_df[filtered_df['repay'] == 'Yes']['loanLength'].tolist()
+        income_no = filtered_df[filtered_df['repay'] == 'No']['loanLength'].tolist()
+
+        result = {'Yes': income_yes, 'No': income_no}
+        return result
+
+# Endpoints to get information about clients already present in the database
 @app.get('/api/statistics/loans')
 async def get_stats_loan():
 
