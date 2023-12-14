@@ -174,8 +174,8 @@ def plot_shap(data: dict):
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_neighbors_scores(data):
-    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
-    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Scores'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Scores'}, color_discrete_sequence=['red'])
 
     tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
     with tab1: 
@@ -184,8 +184,8 @@ def plot_neighbors_scores(data):
         st.plotly_chart(fig_no, use_container_width=True)
 
 def plot_neighbors_annual_income(data):
-    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
-    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total income'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Total income'}, color_discrete_sequence=['red'])
 
     tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
     with tab1: 
@@ -194,8 +194,8 @@ def plot_neighbors_annual_income(data):
         st.plotly_chart(fig_no, use_container_width=True)
 
 def plot_neighbors_credit_amount(data):
-    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
-    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Credit amount'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Credit amount'}, color_discrete_sequence=['red'])
 
     tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
     with tab1: 
@@ -204,8 +204,8 @@ def plot_neighbors_credit_amount(data):
         st.plotly_chart(fig_no, use_container_width=True)
 
 def plot_neighbors_loan_duration(data):
-    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Total Income'}, color_discrete_sequence=['green'])
-    fig_no = px.histogram(x=data['No'], labels={'x': 'Total Income'}, color_discrete_sequence=['red'])
+    fig_yes = px.histogram(x=data['Yes'], labels={'x': 'Loan duration'}, color_discrete_sequence=['green'])
+    fig_no = px.histogram(x=data['No'], labels={'x': 'Loan duration'}, color_discrete_sequence=['red'])
 
     tab1, tab2 = st.tabs(['Likely to repay', 'Likely to default'])
     with tab1: 
