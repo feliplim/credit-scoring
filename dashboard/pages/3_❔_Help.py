@@ -23,7 +23,7 @@ st.markdown('In the **Financial Information** tab, it is possible to find inform
 st.markdown('In the **Prediction** tab, it is possible to find the prediction of the credit score, the probabilities to repay the loan or not, and whether the loan should be accepted or not')
 st.markdown('In the **Similar Clients** tab, it is possible to find the behavior of the 1000 most similar clients to the client applying for a loan')
 st.markdown('In the **Local Analysis** tab, it is possible to find which elements were the most important for this prediction and decition')
-st.markdown('In the **Glocal Analysis** tab, it is possible to find which elements were the most important for prediction model')
+st.markdown('In the **Global Analysis** tab, it is possible to find which elements were the most important for prediction model')
 st.markdown('')
 
 
