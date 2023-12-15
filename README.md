@@ -16,6 +16,7 @@ Ready to spend therefore decides to develop an interactive dashboard so that cus
 1. Building a scoring model that will give a prediction about the probability of bankruptcy of a client automatically.
 2. Build an interactive dashboard for customer relationship managers to interpret the predictions made by the model, and improve customer knowledge of customer relationship loaders.
 3. Select a Kernel Kaggle to facilitate the preparation of the data needed to develop the scoring model. You will analyze this kernel and adapt to make sure it meets the needs of your mission.
+* The original data used in the project can be downloaded from [Kaggle](https://www.kaggle.com/c/home-credit-default-risk/data)
 
 ### **Considerations - Dashboard specifications**
 
@@ -58,4 +59,35 @@ You can see the **final work** in the following links
 - docs:
 - models:
 - tests: unit tests using pytest
-- presentation: 
+- presentation:
+
+├── .github
+|    ├── workflows                     <- Code with Github actions
+├── api
+|   ├── Dockerfile                     <- Dockerfile with commands to create image to run API 
+|   ├── main.py                        <- Main python code for API
+├── notebooks
+|   ├── 1-eda.ipynb                    <- Exploratory data analysis python code
+|   ├── 2-feature-engineering.ipynb    <- Preprocessing python code
+|   ├── 3.modelling.ipynb              <- Modelling python code
+|   ├── 4-data-drift.py                <- Data drift python code
+├── dashboad
+|   ├── 1_🏠_Homepage.py
+|   ├── pages
+|       ├── 2_🔎_Client.py
+|       ├── 3_❔_Help.py
+├── data
+|   ├── processed
+|       ├── test_feature_engineering_encoded.csv.gz
+|       ├── train_feature_engineering_encoded_extract.csv.gz
+├── docs
+|   ├── data_drift_report.html
+├── models
+|   ├── lightgbm_classifier.pkl
+|   ├── lightgbm_shap_explainer.pkl
+├── tests
+|   ├── test_processed_data.py
+├── presentation
+├── .gitignore
+├── README.md
+├── requirements.txt
