@@ -48,19 +48,9 @@ This will have to contain at least the following features:
 #### **Final work**
 You can see the **final work** in the following links
 - [Frontend with Streamlit](https://credit-scoring-felipelim.streamlit.app/)
-- [Endpoint API](http://13.38.11.228/docs)
+- [Endpoint API](http://13.39.159.132/docs)
 
 ## **Repository file structure**
-- .github/workflows: file with github actions
-- api: 
-- notebooks:
-- dashboard:
-- data/processed:
-- docs:
-- models:
-- tests: unit tests using pytest
-- presentation:
-
 ├── .github
 |    ├── workflows                     <- Code with Github actions
 ├── api
@@ -91,3 +81,6 @@ You can see the **final work** in the following links
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
+
+
+
