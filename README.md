@@ -51,36 +51,39 @@ You can see the **final work** in the following links
 - [Endpoint API](http://13.39.159.132/docs)
 
 ## **Repository file structure**
-├── .github
-|    ├── workflows                     <- Code with Github actions
-├── api
-|   ├── Dockerfile                     <- Dockerfile with commands to create image to run API 
-|   ├── main.py                        <- Main python code for API
-├── notebooks
-|   ├── 1-eda.ipynb                    <- Exploratory data analysis python code
-|   ├── 2-feature-engineering.ipynb    <- Preprocessing python code
-|   ├── 3.modelling.ipynb              <- Modelling python code
-|   ├── 4-data-drift.py                <- Data drift python code
-├── dashboad
-|   ├── 1_🏠_Homepage.py
-|   ├── pages
-|       ├── 2_🔎_Client.py
-|       ├── 3_❔_Help.py
-├── data
-|   ├── processed
-|       ├── test_feature_engineering_encoded.csv.gz
-|       ├── train_feature_engineering_encoded_extract.csv.gz
-├── docs
-|   ├── data_drift_report.html
-├── models
-|   ├── lightgbm_classifier.pkl
-|   ├── lightgbm_shap_explainer.pkl
-├── tests
-|   ├── test_processed_data.py
-├── presentation
-├── .gitignore
-├── README.md
-├── requirements.txt
+
+------------
+
+    ├── .github
+    |    ├── workflows                     <- Code with Github actions
+    ├── api
+    |   ├── Dockerfile                     <- Dockerfile with commands to create image to run API 
+    |   ├── main.py                        <- Main python code for API
+    ├── notebooks
+    |   ├── 1-eda.ipynb                    <- Exploratory data analysis python code
+    |   ├── 2-feature-engineering.ipynb    <- Preprocessing python code
+    |   ├── 3.modelling.ipynb              <- Modelling python code
+    |   ├── 4-data-drift.py                <- Data drift python code
+    ├── dashboad
+    |   ├── 1_🏠_Homepage.py
+    |   ├── pages
+    |       ├── 2_🔎_Client.py
+    |       ├── 3_❔_Help.py
+    ├── data
+    |   ├── processed
+    |       ├── test_feature_engineering_encoded.csv.gz
+    |       ├── train_feature_engineering_encoded_extract.csv.gz
+    ├── docs
+    |   ├── data_drift_report.html
+    ├── models
+    |   ├── lightgbm_classifier.pkl
+    |   ├── lightgbm_shap_explainer.pkl
+    ├── tests
+    |   ├── test_processed_data.py
+    ├── presentation
+    ├── .gitignore
+    ├── README.md
+    ├── requirements.txt
 
 
 
